@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import LoginForm from "./login-form";
 
 export default function AdminLoginPage() {
@@ -7,11 +8,13 @@ export default function AdminLoginPage() {
                 <p className="text-sm font-semibold text-pink-300">Admin</p>
                 <h1 className="mt-2 text-3xl font-bold">管理画面ログイン</h1>
                 <p className="mt-3 text-sm text-zinc-400">
-                    管理画面を利用するにはログインが必要である。
+                    管理画面を利用するにはログインが必要です。
                 </p>
             </div>
 
-            <LoginForm />
+            <Suspense fallback={<div>Loading...</div>}>
+                <LoginForm />
+            </Suspense>
         </main>
     );
 }
