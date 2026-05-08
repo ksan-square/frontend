@@ -56,7 +56,7 @@ export default async function Home() {
 
         <div className="mt-4 space-y-3">
           {notices?.length === 0 && (
-            <p className="text-sm text-zinc-400">現在お知らせはない。</p>
+            <p className="text-sm text-zinc-400">現在お知らせはありません。</p>
           )}
 
           {notices?.map((notice) => (

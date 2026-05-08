@@ -26,7 +26,7 @@ export default async function SongDetailPage({ params }: Props) {
         .single();
 
     if (songError || !song) {
-        return <main>曲が見つからなかった。</main>;
+        return <main>曲が見つかりませんでした。</main>;
     }
 
     const { data: parts, error: partsError } = await supabase
@@ -55,7 +55,7 @@ export default async function SongDetailPage({ params }: Props) {
         .order("order_no");
 
     if (partsError) {
-        return <main>歌割の取得に失敗した: {partsError.message}</main>;
+        return <main>歌割の取得に失敗しました: {partsError.message}</main>;
     }
 
     const songParts = (parts ?? []) as SongPart[];
@@ -82,7 +82,7 @@ export default async function SongDetailPage({ params }: Props) {
 
                 {songParts.length === 0 && (
                     <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-400">
-                        まだ歌割・コールが登録されていない。
+                        まだ歌割・コールが登録されていません。
                     </div>
                 )}
 

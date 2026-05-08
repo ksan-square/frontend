@@ -16,7 +16,7 @@ export default async function LiveDetailPage({ params }: Props) {
         .single();
 
     if (liveError || !live) {
-        return <main>ライブが見つからなかった。</main>;
+        return <main>ライブが見つかりませんでした。</main>;
     }
 
     const { data: setlist, error: setlistError } = await supabase
@@ -34,7 +34,7 @@ export default async function LiveDetailPage({ params }: Props) {
         .order("order_no");
 
     if (setlistError) {
-        return <main>セトリの取得に失敗した: {setlistError.message}</main>;
+        return <main>セトリの取得に失敗しました: {setlistError.message}</main>;
     }
 
     const items = (setlist ?? []) as SetlistItem[];
@@ -60,13 +60,13 @@ export default async function LiveDetailPage({ params }: Props) {
                 <div>
                     <h2 className="text-2xl font-bold">セトリ</h2>
                     <p className="mt-2 text-sm text-zinc-400">
-                        曲名を押すと、歌割・コールページに移動できる。
+                        曲名を押すと、歌割・コールページに移動できますっｓ。
                     </p>
                 </div>
 
                 {items.length === 0 && (
                     <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-400">
-                        まだセトリが登録されていない。
+                        まだセトリが登録されていません。
                     </div>
                 )}
 

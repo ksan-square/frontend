@@ -9,7 +9,7 @@ export default async function SongsPage() {
         .order("title");
 
     if (error) {
-        return <main>曲一覧の取得に失敗した: {error.message}</main>;
+        return <main>曲一覧の取得に失敗しました: {error.message}</main>;
     }
 
     const songs = data as Song[];
@@ -20,7 +20,7 @@ export default async function SongsPage() {
                 <p className="text-sm font-semibold text-pink-300">Songs</p>
                 <h1 className="mt-2 text-3xl font-bold">曲一覧</h1>
                 <p className="mt-3 text-zinc-400">
-                    歌割・コール・作詞作曲情報を確認できる。
+                    歌割・コール・作詞作曲情報を確認できます。
                 </p>
             </section>
 

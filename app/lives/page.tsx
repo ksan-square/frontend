@@ -27,7 +27,7 @@ export default async function LivesPage() {
             <section className="space-y-4">
                 {lives.length === 0 && (
                     <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-400">
-                        まだライブ履歴が登録されていない。
+                        まだライブ履歴が登録されていません。
                     </div>
                 )}
 
