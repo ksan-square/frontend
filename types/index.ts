@@ -1,0 +1,52 @@
+export type Member = {
+    id: string;
+    name: string;
+    member_color_name: string | null;
+    member_color_code: string | null;
+    lyric_display_color_code: string | null;
+};
+
+export type Song = {
+    id: string;
+    title: string;
+    slug: string;
+    description: string | null;
+    release_date: string | null;
+    lyricist: string | null;
+    composer: string | null;
+    arranger: string | null;
+};
+
+export type SongPart = {
+    id: string;
+    order_no: number;
+    section_name: string | null;
+    part_type: string;
+    vocal_type: "none" | "members" | "all";
+    lyric_text: string | null;
+    call_text: string | null;
+    note: string | null;
+    song_part_members: {
+        display_order: number;
+        members: Member[] | null;
+    }[];
+};
+
+export type Live = {
+    id: string;
+    live_date: string;
+    event_name: string;
+    venue: string | null;
+    area: string | null;
+    memo: string | null;
+};
+
+export type SetlistItem = {
+    id: string;
+    order_no: number;
+    note: string | null;
+    songs: {
+        title: string;
+        slug: string;
+    }[] | null;
+};
