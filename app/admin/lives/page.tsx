@@ -20,7 +20,7 @@ export default async function AdminLivesPage() {
         .order("same_day_order", { ascending: true });
 
     if (error) {
-        return <main>ライブ一覧の取得に失敗した: {error.message}</main>;
+        return <main>ライブ一覧の取得に失敗ました: {error.message}</main>;
     }
 
     return (
