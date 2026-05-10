@@ -1,18 +1,23 @@
 import Link from "next/link";
+import LogoutButton from "./logout-button";
 
 export default function AdminPage() {
     const links = [
-        { href: "/admin/songs", title: "曲管理" },
         { href: "/admin/members", title: "メンバー管理" },
+        { href: "/admin/songs", title: "曲管理" },
         { href: "/admin/song-parts", title: "歌割・コール管理" },
-        { href: "/admin/song-part-members", title: "歌唱メンバー管理" },
+        { href: "/admin/venues", title: "会場管理" },
         { href: "/admin/lives", title: "ライブ管理" },
         { href: "/admin/setlists", title: "セトリ管理" },
+        { href: "/admin/notices", title: "お知らせ管理" },
     ];
 
     return (
         <main className="space-y-8">
-            <h1 className="text-3xl font-bold">管理画面</h1>
+            <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold">管理画面</h1>
+                <LogoutButton />
+            </div>
 
             <section className="grid gap-4 md:grid-cols-2">
                 {links.map((link) => (
