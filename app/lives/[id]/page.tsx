@@ -60,7 +60,7 @@ export default async function LiveDetailPage({ params }: Props) {
                 <div>
                     <h2 className="text-2xl font-bold">セトリ</h2>
                     <p className="mt-2 text-sm text-zinc-400">
-                        曲名を押すと、歌割・コールページに移動できますっｓ。
+                        曲名を押すと、歌割・コールページに移動できます。
                     </p>
                 </div>
 
