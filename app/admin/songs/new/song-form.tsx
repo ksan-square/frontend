@@ -38,7 +38,7 @@ export default function SongForm() {
         setLyricist("");
         setComposer("");
         setArranger("");
-        setMessage("曲を登録した。");
+        setMessage("曲を登録しました。");
     }
 
     return (

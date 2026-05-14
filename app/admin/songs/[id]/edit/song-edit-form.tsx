@@ -48,7 +48,7 @@ export default function SongEditForm({ song }: { song: Song }) {
             return;
         }
 
-        setMessage("更新した。");
+        setMessage("更新しました。");
         router.refresh();
     }
 
