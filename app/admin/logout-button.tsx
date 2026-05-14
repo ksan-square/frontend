@@ -8,7 +8,7 @@ export default function LogoutButton() {
 
     const supabase = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
     );
 
     async function handleLogout() {
@@ -20,7 +20,7 @@ export default function LogoutButton() {
     return (
         <button
             onClick={handleLogout}
-            className="rounded-full border border-zinc-700 px-4 py-2 text-sm font-bold text-zinc-200 hover:bg-zinc-900"
+            className="rounded-full border border-zinc-700 px-4 py-2 text-sm font-bold"
         >
             ログアウト
         </button>
