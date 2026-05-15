@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import type { SetlistItem } from "@/types";
+import type { Live, SetlistItem } from "@/types";
 
 type Props = {
     params: Promise<{ id: string }>;
@@ -9,32 +9,51 @@ type Props = {
 export default async function LiveDetailPage({ params }: Props) {
     const { id } = await params;
 
-    const { data: live, error: liveError } = await supabase
+    const { data: liveData, error: liveError } = await supabase
         .from("lives")
-        .select("id,live_date,event_name,venue,area,memo")
+        .select(`
+            id,
+            live_date,
+            event_name,
+            memo,
+            venues!lives_venue_id_fkey (
+                id,
+                name,
+                area,
+                google_map_url
+            )
+        `)
         .eq("id", id)
         .single();
 
-    if (liveError || !live) {
+    if (liveError || !liveData) {
         return <main>ライブが見つかりませんでした。</main>;
     }
+
+    const live = liveData as unknown as Live;
+
+    const venue = live.venues;
 
     const { data: setlist, error: setlistError } = await supabase
         .from("setlist_items")
         .select(`
-      id,
-      order_no,
-      note,
-      songs (
-        title,
-        slug
-      )
-    `)
+            id,
+            order_no,
+            note,
+            songs (
+                title,
+                slug
+            )
+        `)
         .eq("live_id", id)
         .order("order_no");
 
     if (setlistError) {
-        return <main>セトリの取得に失敗しました: {setlistError.message}</main>;
+        return (
+            <main>
+                セトリの取得に失敗しました: {setlistError.message}
+            </main>
+        );
     }
 
     const items = (setlist ?? []) as SetlistItem[];
@@ -46,19 +65,40 @@ export default async function LiveDetailPage({ params }: Props) {
                     {live.live_date}
                 </p>
 
-                <h1 className="mt-2 text-3xl font-bold">{live.event_name}</h1>
+                <h1 className="mt-2 text-3xl font-bold">
+                    {live.event_name}
+                </h1>
 
                 <p className="mt-3 text-zinc-400">
-                    {live.venue ?? "会場未登録"}
-                    {live.area && ` / ${live.area}`}
+                    {venue?.name ?? "会場未登録"}
+
+                    {venue?.area && ` / ${venue.area}`}
                 </p>
 
-                {live.memo && <p className="mt-4 text-zinc-300">{live.memo}</p>}
+                {venue?.google_map_url && (
+                    <a
+                        href={venue.google_map_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 inline-block text-sm font-semibold text-pink-300 hover:underline"
+                    >
+                        Google Mapで見る
+                    </a>
+                )}
+
+                {live.memo && (
+                    <p className="mt-4 text-zinc-300">
+                        {live.memo}
+                    </p>
+                )}
             </section>
 
             <section className="space-y-4">
                 <div>
-                    <h2 className="text-2xl font-bold">セトリ</h2>
+                    <h2 className="text-2xl font-bold">
+                        セトリ
+                    </h2>
+
                     <p className="mt-2 text-sm text-zinc-400">
                         曲名を押すと、歌割・コールページに移動できます。
                     </p>
@@ -72,7 +112,9 @@ export default async function LiveDetailPage({ params }: Props) {
 
                 <ol className="space-y-3">
                     {items.map((item) => {
-                        const song = item.songs?.[0];
+                        const song = Array.isArray(item.songs)
+                            ? item.songs[0]
+                            : item.songs;
 
                         return (
                             <li
@@ -93,7 +135,9 @@ export default async function LiveDetailPage({ params }: Props) {
                                                 {song.title}
                                             </Link>
                                         ) : (
-                                            <p className="text-lg font-bold">不明な曲</p>
+                                            <p className="text-lg font-bold">
+                                                不明な曲
+                                            </p>
                                         )}
 
                                         {item.note && (

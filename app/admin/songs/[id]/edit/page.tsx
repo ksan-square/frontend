@@ -20,7 +20,7 @@ export default async function EditSongPage({ params }: Props) {
 
     return (
         <main className="space-y-6">
-            <h1 className="text-3xl font-bold">曲を編集</h1>
+            <h1 className="text-3xl font-bold">曲を編集する。</h1>
             <SongEditForm song={song} />
         </main>
     );

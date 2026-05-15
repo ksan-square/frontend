@@ -32,13 +32,19 @@ export type SongPart = {
     }[];
 };
 
+export type Venue = {
+    id: string;
+    name: string;
+    area: string | null;
+    google_map_url: string | null;
+};
+
 export type Live = {
     id: string;
     live_date: string;
     event_name: string;
-    venue: string | null;
-    area: string | null;
     memo: string | null;
+    venues: Venue | null;
 };
 
 export type SetlistItem = {
