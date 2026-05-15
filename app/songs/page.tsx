@@ -3,10 +3,16 @@ import { supabase } from "@/lib/supabase";
 import type { Song } from "@/types";
 
 export default async function SongsPage() {
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
         .from("songs")
-        .select("id,title,slug,description,release_date,lyricist,composer,arranger")
+        .select("id,title,slug,description,release_date,lyricist,composer,arranger", {
+            count: "exact",
+        })
         .order("title");
+
+    console.log("songs data:", data);
+    console.log("songs count:", count);
+    console.log("songs error:", error);
 
     if (error) {
         return <main>曲一覧の取得に失敗しました: {error.message}</main>;
