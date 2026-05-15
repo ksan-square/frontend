@@ -19,6 +19,7 @@ import {
 
 import { CSS } from "@dnd-kit/utilities";
 
+import { getCurrentUserId } from "@/lib/current-user";
 import { supabaseClient } from "@/lib/supabase-client";
 
 type Item = {
@@ -96,9 +97,11 @@ function SortableItem({
 export default function SortableSetlist({
     items,
     onDelete,
+    onError,
 }: {
     items: Item[];
     onDelete: (id: string) => void;
+    onError?: (message: string) => void;
 }) {
     const [localItems, setLocalItems] =
         useState<Item[]>(items);
@@ -134,13 +137,22 @@ export default function SortableSetlist({
 
         setLocalItems(reordered);
 
+        const userId = await getCurrentUserId();
         for (let i = 0; i < reordered.length; i++) {
-            await supabaseClient
+            const { error } = await supabaseClient
                 .from("setlist_items")
                 .update({
                     order_no: i + 1,
+                    updated_user: userId,
                 })
-                .eq("id", reordered[i].id);
+                .eq("id", reordered[i].id)
+                .eq("is_delete", false);
+
+            if (error) {
+                setLocalItems(localItems);
+                onError?.(`並び替え失敗: ${error.message}`);
+                return;
+            }
         }
     }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getCurrentUserId } from "@/lib/current-user";
 import { supabaseClient } from "@/lib/supabase-client";
 
 export default function NoticeForm() {
@@ -11,12 +12,16 @@ export default function NoticeForm() {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        const userId = await getCurrentUserId();
 
         const { error } = await supabaseClient.from("notices").insert({
             title,
             tag: tag || null,
             body,
             is_published: true,
+            is_delete: false,
+            created_user: userId,
+            updated_user: userId,
         });
 
         if (error) {

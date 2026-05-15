@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { getCurrentUserId } from "@/lib/current-user";
 import { supabase } from "@/lib/supabase";
 
 type Song = {
@@ -21,7 +22,7 @@ type SongPart = {
     lyric_text: string | null;
     vocal_type: string;
     songs: { title: string }[] | null;
-    song_part_members: { member_id: string }[];
+    song_part_members: { is_delete: boolean; member_id: string }[];
 };
 
 type Props = {
@@ -59,7 +60,9 @@ export default function SongPartMemberManager({ songs, parts, members }: Props) 
 
         const part = parts.find((p) => p.id === partId);
         const currentMemberIds =
-            part?.song_part_members?.map((row) => row.member_id) ?? [];
+            part?.song_part_members
+                ?.filter((row) => !row.is_delete)
+                .map((row) => row.member_id) ?? [];
 
         setCheckedMemberIds(currentMemberIds);
         setMessage("");
@@ -79,10 +82,15 @@ export default function SongPartMemberManager({ songs, parts, members }: Props) 
             return;
         }
 
+        const userId = await getCurrentUserId();
         const deleteResult = await supabase
             .from("song_part_members")
-            .delete()
-            .eq("song_part_id", selectedPartId);
+            .update({
+                is_delete: true,
+                updated_user: userId,
+            })
+            .eq("song_part_id", selectedPartId)
+            .eq("is_delete", false);
 
         if (deleteResult.error) {
             setMessage(`削除失敗: ${deleteResult.error.message}`);
@@ -98,11 +106,16 @@ export default function SongPartMemberManager({ songs, parts, members }: Props) 
             song_part_id: selectedPartId,
             member_id: memberId,
             display_order: index + 1,
+            is_delete: false,
+            created_user: userId,
+            updated_user: userId,
         }));
 
         const insertResult = await supabase
             .from("song_part_members")
-            .insert(rows);
+            .upsert(rows, {
+                onConflict: "song_part_id,member_id",
+            });
 
         if (insertResult.error) {
             setMessage(`登録失敗: ${insertResult.error.message}`);

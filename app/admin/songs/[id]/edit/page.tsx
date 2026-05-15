@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import Breadcrumbs from "@/app/_components/breadcrumbs";
 import SongEditForm from "./song-edit-form";
 import Link from "next/link";
 
@@ -13,8 +14,9 @@ export default async function EditSongPage({ params }: Props) {
 
     const { data: song, error } = await supabase
         .from("songs")
-        .select("id,title,slug,description,release_date,lyricist,composer,arranger")
+        .select("id,title,slug,order_no,description,release_date,lyricist,composer,arranger")
         .eq("id", id)
+        .eq("is_delete", false)
         .single();
 
     if (error || !song) {
@@ -23,6 +25,14 @@ export default async function EditSongPage({ params }: Props) {
 
     return (
         <main className="space-y-6">
+            <Breadcrumbs
+                items={[
+                    { href: "/admin", label: "管理" },
+                    { href: "/admin/songs", label: "曲管理" },
+                    { label: song.title },
+                ]}
+            />
+
             <Link href="/admin/songs" className="inline-block rounded-full bg-zinc-800 px-4 py-2">
                 戻る
             </Link>

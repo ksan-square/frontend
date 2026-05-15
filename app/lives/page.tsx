@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Breadcrumbs from "@/app/_components/breadcrumbs";
+import Pagination from "@/app/_components/pagination";
 import { supabase } from "@/lib/supabase";
 import type { Live } from "@/types";
 
@@ -6,8 +8,141 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
-export default async function LivesPage() {
-    const { data, error } = await supabase
+const PAGE_SIZE = 20;
+
+type SearchParams = Promise<{
+    month?: string | string[];
+    page?: string | string[];
+}>;
+
+type MonthIndexItem = {
+    key: string;
+    label: string;
+    count: number;
+};
+
+function firstParam(value: string | string[] | undefined) {
+    return Array.isArray(value) ? value[0] : value;
+}
+
+function parsePage(value: string | string[] | undefined) {
+    const page = Number(firstParam(value));
+
+    if (!Number.isInteger(page) || page < 1) {
+        return 1;
+    }
+
+    return page;
+}
+
+function parseMonth(value: string | string[] | undefined) {
+    const month = firstParam(value);
+
+    if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+        return null;
+    }
+
+    return month;
+}
+
+function getNextMonth(month: string) {
+    const [year, monthNumber] = month.split("-").map(Number);
+    const date = new Date(Date.UTC(year, monthNumber, 1));
+
+    return `${date.getUTCFullYear()}-${String(
+        date.getUTCMonth() + 1,
+    ).padStart(2, "0")}`;
+}
+
+function formatMonthLabel(month: string) {
+    const [year, monthNumber] = month.split("-");
+
+    return `${year}年${Number(monthNumber)}月`;
+}
+
+function getMonthKey(date: string) {
+    return date.slice(0, 7);
+}
+
+function getWeekKey(date: string) {
+    const day = new Date(`${date}T00:00:00`);
+    const year = day.getFullYear();
+    const month = day.getMonth();
+    const weekOfMonth = Math.floor((day.getDate() - 1) / 7) + 1;
+
+    return `${year}-${String(month + 1).padStart(2, "0")}-w${weekOfMonth}`;
+}
+
+function formatWeekLabel(date: string) {
+    const day = new Date(`${date}T00:00:00`);
+    const weekOfMonth = Math.floor((day.getDate() - 1) / 7) + 1;
+
+    return `${day.getMonth() + 1}月 第${weekOfMonth}週`;
+}
+
+function buildMonthIndex(liveDates: { live_date: string | null }[]) {
+    const counts = new Map<string, number>();
+
+    for (const live of liveDates) {
+        if (!live.live_date) {
+            continue;
+        }
+
+        const month = getMonthKey(live.live_date);
+        counts.set(month, (counts.get(month) ?? 0) + 1);
+    }
+
+    return Array.from(counts.entries()).map<MonthIndexItem>(
+        ([key, count]) => ({
+            key,
+            label: formatMonthLabel(key),
+            count,
+        }),
+    );
+}
+
+function createLivesHref(month?: string | null) {
+    return month ? `/lives?month=${month}` : "/lives";
+}
+
+export default async function LivesPage({
+    searchParams,
+}: {
+    searchParams: SearchParams;
+}) {
+    const params = await searchParams;
+    const selectedMonth = parseMonth(params.month);
+    const requestedPage = parsePage(params.page);
+
+    const { data: liveDates, error: liveDatesError } = await supabase
+        .from("lives")
+        .select("live_date")
+        .eq("is_delete", false)
+        .order("live_date", { ascending: false });
+
+    if (liveDatesError) {
+        return (
+            <main>
+                ライブ履歴の取得に失敗しました: {liveDatesError.message}
+            </main>
+        );
+    }
+
+    const monthIndex = buildMonthIndex(liveDates ?? []);
+    const monthStart = selectedMonth ? `${selectedMonth}-01` : null;
+    const monthEnd = selectedMonth ? `${getNextMonth(selectedMonth)}-01` : null;
+    const selectedMonthItem = monthIndex.find(
+        (month) => month.key === selectedMonth,
+    );
+    const totalLives = selectedMonth
+        ? selectedMonthItem?.count ?? 0
+        : liveDates?.length ?? 0;
+    const totalPages = Math.max(Math.ceil(totalLives / PAGE_SIZE), 1);
+    const currentPage = Math.min(requestedPage, totalPages);
+    const rangeStart = (currentPage - 1) * PAGE_SIZE;
+    const rangeEnd = rangeStart + PAGE_SIZE - 1;
+
+    let livesQuery = supabase
         .from("lives")
         .select(`
         id,
@@ -21,8 +156,17 @@ export default async function LivesPage() {
             google_map_url
         )
     `)
-        .order("live_date", { ascending: false });
+        .eq("is_delete", false)
+        .order("live_date", { ascending: false })
+        .order("same_day_order", { ascending: true });
 
+    if (monthStart && monthEnd) {
+        livesQuery = livesQuery
+            .gte("live_date", monthStart)
+            .lt("live_date", monthEnd);
+    }
+
+    const { data, error } = await livesQuery.range(rangeStart, rangeEnd);
 
     if (error) {
         return (
@@ -32,10 +176,14 @@ export default async function LivesPage() {
         );
     }
 
-    const lives = data as unknown as Live[];
+    const lives = (data ?? []) as unknown as Live[];
+    let previousMonth: string | null = null;
+    let previousWeek: string | null = null;
 
     return (
         <main className="space-y-8">
+            <Breadcrumbs items={[{ label: "ライブ履歴" }]} />
+
             <section>
                 <p className="text-sm font-semibold text-pink-300">
                     Lives
@@ -50,6 +198,52 @@ export default async function LivesPage() {
                 </p>
             </section>
 
+            <section className="space-y-3 rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                        href="/lives"
+                        aria-current={!selectedMonth ? "page" : undefined}
+                        className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm aria-current:bg-pink-500 aria-current:font-bold"
+                    >
+                        すべて
+                    </Link>
+
+                    {monthIndex.map((month) => (
+                        <Link
+                            key={month.key}
+                            href={createLivesHref(month.key)}
+                            aria-current={
+                                selectedMonth === month.key
+                                    ? "page"
+                                    : undefined
+                            }
+                            className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm aria-current:bg-pink-500 aria-current:font-bold"
+                        >
+                            {month.label}
+                            <span className="ml-1 text-xs text-zinc-300">
+                                {month.count}
+                            </span>
+                        </Link>
+                    ))}
+                </div>
+            </section>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-400">
+                <p>
+                    {totalLives}件中 {totalLives === 0 ? 0 : rangeStart + 1}-
+                    {Math.min(rangeEnd + 1, totalLives)}件を表示
+                </p>
+
+                {selectedMonth && (
+                    <Link
+                        href="/lives"
+                        className="rounded-full bg-zinc-800 px-3 py-1.5 text-zinc-100"
+                    >
+                        月選択を解除
+                    </Link>
+                )}
+            </div>
+
             <section className="space-y-4">
                 {lives.length === 0 && (
                     <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-400">
@@ -59,50 +253,75 @@ export default async function LivesPage() {
 
                 {lives.map((live) => {
                     const venue = live.venues;
+                    const month = getMonthKey(live.live_date);
+                    const week = getWeekKey(live.live_date);
+                    const shouldShowMonth = month !== previousMonth;
+                    const shouldShowWeek = week !== previousWeek;
+
+                    previousMonth = month;
+                    previousWeek = week;
 
                     return (
-                        <div
-                            key={live.id}
-                            className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 hover:border-pink-400/60"
-                        >
-                            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                                <div>
-                                    <p className="text-sm font-semibold text-pink-300">
-                                        {live.live_date}
-                                    </p>
+                        <div key={live.id} className="space-y-3">
+                            {shouldShowMonth && (
+                                <h2 className="pt-4 text-2xl font-bold">
+                                    {formatMonthLabel(month)}
+                                </h2>
+                            )}
 
-                                    <h2 className="mt-1 text-xl font-bold">
-                                        {live.event_name}
-                                    </h2>
+                            {shouldShowWeek && (
+                                <p className="border-l-4 border-pink-500 pl-3 text-sm font-bold text-pink-200">
+                                    {formatWeekLabel(live.live_date)}
+                                </p>
+                            )}
 
-                                    <p className="mt-2 text-sm text-zinc-400">
-                                        {venue?.name ?? "会場未登録"}
-                                        {venue?.area && ` / ${venue.area}`}
-                                    </p>
+                            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 hover:border-pink-400/60">
+                                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                    <div>
+                                        <p className="text-sm font-semibold text-pink-300">
+                                            {live.live_date}
+                                        </p>
 
-                                    {venue?.google_map_url && (
-                                        <a
-                                            href={venue.google_map_url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="mt-2 inline-block text-sm font-semibold text-pink-300 hover:underline"
-                                        >
-                                            Google Mapで見る
-                                        </a>
-                                    )}
+                                        <h3 className="mt-1 text-xl font-bold">
+                                            {live.event_name}
+                                        </h3>
+
+                                        <p className="mt-2 text-sm text-zinc-400">
+                                            {venue?.name ?? "会場未登録"}
+                                            {venue?.area && ` / ${venue.area}`}
+                                        </p>
+
+                                        {venue?.google_map_url && (
+                                            <a
+                                                href={venue.google_map_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="mt-2 inline-block text-sm font-semibold text-pink-300 hover:underline"
+                                            >
+                                                Google Mapで見る
+                                            </a>
+                                        )}
+                                    </div>
+
+                                    <Link
+                                        href={`/lives/${live.id}`}
+                                        className="w-fit rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-300 hover:bg-pink-500 hover:text-white"
+                                    >
+                                        セトリを見る
+                                    </Link>
                                 </div>
-
-                                <Link
-                                    href={`/lives/${live.id}`}
-                                    className="w-fit rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-300 hover:bg-pink-500 hover:text-white"
-                                >
-                                    セトリを見る
-                                </Link>
                             </div>
                         </div>
                     );
                 })}
             </section>
+
+            <Pagination
+                basePath="/lives"
+                currentPage={currentPage}
+                totalPages={totalPages}
+                query={{ month: selectedMonth }}
+            />
         </main>
     );
 }
