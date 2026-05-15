@@ -2,7 +2,10 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import DeleteButton from "./delete-button";
 
+
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 export default async function AdminLivesPage() {
     const { data: lives, error } = await supabase
