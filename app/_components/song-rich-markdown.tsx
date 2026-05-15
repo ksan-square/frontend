@@ -104,17 +104,14 @@ const rules: DecorationRule[] = [
             return (
                 <span
                     key={key}
-                    className="group relative inline-block rounded px-1 py-0.5 align-baseline whitespace-pre-wrap focus:outline-none focus:ring-1 focus:ring-white/40"
+                    className="group relative inline whitespace-pre-wrap focus:outline-none focus:ring-1 focus:ring-white/40"
                     tabIndex={0}
                     title={memberLabel || undefined}
                     style={{
-                        backgroundColor:
-                            firstMember?.member_color_code ?? "rgba(63,63,70,0.5)",
-                        color: firstMember?.lyric_display_color_code ?? "#ffffff",
-                        boxShadow:
-                            matchedMembers.length > 1
-                                ? "inset 0 0 0 1px rgba(255,255,255,0.25)"
-                                : undefined,
+                        color:
+                            firstMember?.lyric_display_color_code ??
+                            firstMember?.member_color_code ??
+                            undefined,
                     }}
                 >
                     {memberLabel && (
