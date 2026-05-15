@@ -1,5 +1,7 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
+import { DEFAULT_DESCRIPTION, createDescription, joinDescriptionParts } from "@/lib/seo";
 import { supabase } from "@/lib/supabase";
 import type { Live, SetlistItem } from "@/types";
 
@@ -12,6 +14,70 @@ function formatTime(time: string | null) {
 type Props = {
     params: Promise<{ id: string }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { id } = await params;
+
+    const { data: liveData } = await supabase
+        .from("lives")
+        .select(`
+            id,
+            live_date,
+            live_start_time,
+            live_end_time,
+            benefit_meeting_time_note,
+            event_name,
+            memo,
+            venues!lives_venue_id_fkey (
+                name,
+                area
+            )
+        `)
+        .eq("id", id)
+        .eq("is_delete", false)
+        .maybeSingle();
+
+    if (!liveData) {
+        return {
+            title: "ライブが見つかりません",
+            description: DEFAULT_DESCRIPTION,
+        };
+    }
+
+    const venue = Array.isArray(liveData.venues)
+        ? liveData.venues[0]
+        : liveData.venues;
+    const liveTimeText = liveData.live_start_time
+        ? liveData.live_end_time
+            ? `${formatTime(liveData.live_start_time)}-${formatTime(liveData.live_end_time)}`
+            : `${formatTime(liveData.live_start_time)} 開演`
+        : null;
+    const description = joinDescriptionParts([
+        liveData.live_date,
+        liveTimeText,
+        venue?.name,
+        venue?.area,
+        liveData.benefit_meeting_time_note,
+        createDescription(liveData.memo, 80),
+    ]);
+
+    return {
+        title: liveData.event_name,
+        description,
+        alternates: {
+            canonical: `/lives/${id}`,
+        },
+        openGraph: {
+            title: liveData.event_name,
+            description,
+            url: `/lives/${id}`,
+        },
+        twitter: {
+            title: liveData.event_name,
+            description,
+        },
+    };
+}
 
 export default async function LiveDetailPage({ params }: Props) {
     const { id } = await params;

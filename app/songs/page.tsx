@@ -1,8 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import Pagination from "@/app/_components/pagination";
 import { supabase } from "@/lib/supabase";
 import type { Song } from "@/types";
+
+export const metadata: Metadata = {
+    title: "曲一覧",
+    description:
+        "歌詞、コール、作詞作曲情報を探せる曲一覧ページです。",
+    alternates: {
+        canonical: "/songs",
+    },
+};
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
