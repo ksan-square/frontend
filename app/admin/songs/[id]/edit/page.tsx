@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import SongEditForm from "./song-edit-form";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,9 @@ export default async function EditSongPage({ params }: Props) {
 
     return (
         <main className="space-y-6">
+            <Link href="/admin/songs" className="inline-block rounded-full bg-zinc-800 px-4 py-2">
+                戻る
+            </Link>
             <h1 className="text-3xl font-bold">曲を編集する。</h1>
             <SongEditForm song={song} />
         </main>

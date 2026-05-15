@@ -19,16 +19,27 @@ export default function DeleteButton({
             return;
         }
 
-        await supabaseClient
+        const setlistDeleteResult = await supabaseClient
             .from("setlist_items")
             .delete()
             .eq("live_id", id);
 
-        await supabaseClient
+        if (setlistDeleteResult.error) {
+            alert(`削除失敗: ${setlistDeleteResult.error.message}`);
+            return;
+        }
+
+        const liveDeleteResult = await supabaseClient
             .from("lives")
             .delete()
             .eq("id", id);
 
+        if (liveDeleteResult.error) {
+            alert(`削除失敗: ${liveDeleteResult.error.message}`);
+            return;
+        }
+
+        alert("ライブを削除しました。");
         router.refresh();
     }
 
