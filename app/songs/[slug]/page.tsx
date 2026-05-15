@@ -1,12 +1,29 @@
 import Breadcrumbs from "@/app/_components/breadcrumbs";
+import SongRichMarkdown from "@/app/_components/song-rich-markdown";
 import { supabase } from "@/lib/supabase";
-import type { SongPart } from "@/types";
+import type { Member, SongMarkdownPage, SongPart } from "@/types";
 
 export const dynamic = "force-dynamic";
 
 type Props = {
     params: Promise<{ slug: string }>;
 };
+
+function createAnchorId(value: string) {
+    return value
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9\-_ぁ-んァ-ヶ一-龠]/g, "");
+}
+
+function extractMarkdownHeadings(markdown: string) {
+    return Array.from(markdown.matchAll(/^##\s+(.+)$/gm)).map((match, index) => ({
+        id: `heading-${index}`,
+        label: match[1].trim(),
+        anchorId: createAnchorId(match[1].trim()),
+    }));
+}
 
 function getVocalLabel(part: SongPart) {
     if (part.vocal_type === "all") return "全員";
@@ -34,6 +51,27 @@ export default async function SongDetailPage({ params }: Props) {
     if (songError || !song) {
         return <main>曲が見つかりませんでした。</main>;
     }
+
+    const { data: markdownPage, error: markdownError } = await supabase
+        .from("song_markdown_pages")
+        .select("id,song_id,body_markdown")
+        .eq("song_id", song.id)
+        .eq("is_delete", false)
+        .maybeSingle();
+
+    if (markdownError) {
+        return <main>歌詞Markdownの取得に失敗しました: {markdownError.message}</main>;
+    }
+
+    const songMarkdownPage = markdownPage as SongMarkdownPage | null;
+
+    const { data: members } = await supabase
+        .from("members")
+        .select(
+            "id,name,is_delete,member_color_name,member_color_code,lyric_display_color_code",
+        )
+        .eq("is_delete", false)
+        .order("sort_order", { ascending: true });
 
     const { data: parts, error: partsError } = await supabase
         .from("song_parts")
@@ -68,6 +106,17 @@ export default async function SongDetailPage({ params }: Props) {
     }
 
     const songParts = (parts ?? []) as SongPart[];
+    const displayMembers = (members ?? []) as Member[];
+    const useMarkdownPage = Boolean(songMarkdownPage?.body_markdown);
+    const sectionIndex = useMarkdownPage
+        ? extractMarkdownHeadings(songMarkdownPage?.body_markdown ?? "")
+        : songParts
+              .filter((part) => part.section_name)
+              .map((part) => ({
+                  id: part.id,
+                  label: part.section_name as string,
+                  anchorId: createAnchorId(`${part.order_no}-${part.section_name}`),
+              }));
 
     return (
         <main className="space-y-8">
@@ -96,22 +145,49 @@ export default async function SongDetailPage({ params }: Props) {
             <section className="space-y-4">
                 <h2 className="text-2xl font-bold">歌割・コール</h2>
 
-                {songParts.length === 0 && (
+                {sectionIndex.length > 0 && (
+                    <div className="flex flex-wrap gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+                        {sectionIndex.map((item) => (
+                            <a
+                                key={item.id}
+                                href={`#${item.anchorId}`}
+                                className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm hover:bg-pink-500"
+                            >
+                                {item.label}
+                            </a>
+                        ))}
+                    </div>
+                )}
+
+                {!useMarkdownPage && songParts.length === 0 && (
                     <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-400">
                         まだ歌割・コールが登録されていません。
                     </div>
                 )}
 
                 <div className="space-y-3">
-                    {songParts.map((part) => {
-                        const members = part.song_part_members
+                    {useMarkdownPage && (
+                        <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+                            <SongRichMarkdown
+                                markdown={songMarkdownPage?.body_markdown ?? ""}
+                                members={displayMembers}
+                            />
+                        </article>
+                    )}
+
+                    {!useMarkdownPage && songParts.map((part) => {
+                        const members = (part.song_part_members
                             ?.filter((spm) => !spm.is_delete)
                             ?.flatMap((spm) => spm.members ?? [])
-                            .filter((member) => member && !member.is_delete);
+                            .filter((member) => member && !member.is_delete)) ?? [];
+                        const anchorId = createAnchorId(
+                            `${part.order_no}-${part.section_name ?? part.part_type}`,
+                        );
 
                         return (
                             <article
                                 key={part.id}
+                                id={anchorId}
                                 className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5"
                             >
                                 <div className="mb-3 flex flex-wrap items-center gap-2">

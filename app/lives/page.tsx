@@ -10,6 +10,10 @@ export const fetchCache = "force-no-store";
 
 const PAGE_SIZE = 20;
 
+function formatTime(time: string | null) {
+    return time ? time.slice(0, 5) : null;
+}
+
 type SearchParams = Promise<{
     month?: string | string[];
     page?: string | string[];
@@ -113,11 +117,18 @@ export default async function LivesPage({
     const params = await searchParams;
     const selectedMonth = parseMonth(params.month);
     const requestedPage = parsePage(params.page);
+    const today = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Tokyo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).format(new Date());
 
     const { data: liveDates, error: liveDatesError } = await supabase
         .from("lives")
         .select("live_date")
         .eq("is_delete", false)
+        .lt("live_date", today)
         .order("live_date", { ascending: false });
 
     if (liveDatesError) {
@@ -142,11 +153,20 @@ export default async function LivesPage({
     const rangeStart = (currentPage - 1) * PAGE_SIZE;
     const rangeEnd = rangeStart + PAGE_SIZE - 1;
 
-    let livesQuery = supabase
+    const { data: upcomingLives, error: upcomingLivesError } = await supabase
         .from("lives")
         .select(`
         id,
         live_date,
+        same_day_order,
+        live_start_time,
+        live_end_time,
+        benefit_meeting_start_time,
+        benefit_meeting_end_time,
+        benefit_meeting_time_note,
+        benefit_meeting_place_detail,
+        ticket_url,
+        official_x_url,
         event_name,
         memo,
         venues!lives_venue_id_fkey (
@@ -154,9 +174,59 @@ export default async function LivesPage({
             name,
             area,
             google_map_url
+        ),
+        benefit_venue:venues!lives_benefit_venue_id_fkey (
+            id,
+            name,
+            area,
+            google_map_url
         )
     `)
         .eq("is_delete", false)
+        .gte("live_date", today)
+        .order("live_date", { ascending: true })
+        .order("live_start_time", { ascending: true })
+        .order("same_day_order", { ascending: true });
+
+    if (upcomingLivesError) {
+        return (
+            <main>
+                ライブ予定の取得に失敗しました: {upcomingLivesError.message}
+            </main>
+        );
+    }
+
+    let livesQuery = supabase
+        .from("lives")
+        .select(`
+        id,
+        live_date,
+        same_day_order,
+        live_start_time,
+        live_end_time,
+        benefit_meeting_start_time,
+        benefit_meeting_end_time,
+        benefit_meeting_time_note,
+        benefit_meeting_place_detail,
+        ticket_url,
+        official_x_url,
+        event_name,
+        memo,
+        venues!lives_venue_id_fkey (
+            id,
+            name,
+            area,
+            google_map_url
+        ),
+        benefit_venue:venues!lives_benefit_venue_id_fkey (
+            id,
+            name,
+            area,
+            google_map_url
+        )
+    `)
+        .eq("is_delete", false)
+        .lt("live_date", today)
         .order("live_date", { ascending: false })
         .order("same_day_order", { ascending: true });
 
@@ -182,7 +252,7 @@ export default async function LivesPage({
 
     return (
         <main className="space-y-8">
-            <Breadcrumbs items={[{ label: "ライブ履歴" }]} />
+            <Breadcrumbs items={[{ label: "ライブ" }]} />
 
             <section>
                 <p className="text-sm font-semibold text-pink-300">
@@ -190,15 +260,123 @@ export default async function LivesPage({
                 </p>
 
                 <h1 className="mt-2 text-3xl font-bold">
-                    ライブ履歴
+                    ライブ予定・履歴
                 </h1>
 
                 <p className="mt-3 text-zinc-400">
-                    日付・会場・イベントごとにセトリを確認できます。
+                    次回予定を先に確認しつつ、過去ライブのセトリも振り返れます。
                 </p>
             </section>
 
+            <section className="space-y-4">
+                <div>
+                    <h2 className="text-2xl font-bold">今後のライブ予定</h2>
+                    <p className="mt-2 text-sm text-zinc-400">
+                        時間や特典会会場は決まり次第更新できます。
+                    </p>
+                </div>
+
+                {(upcomingLives ?? []).length === 0 && (
+                    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-400">
+                        現在公開中のライブ予定はありません。
+                    </div>
+                )}
+
+                {(upcomingLives as unknown as Live[]).map((live) => {
+                    const venue = live.venues;
+                    const benefitVenue = live.benefit_venue ?? venue;
+                    const liveStartTime = formatTime(live.live_start_time);
+                    const liveEndTime = formatTime(live.live_end_time);
+                    const benefitStartTime = formatTime(live.benefit_meeting_start_time);
+                    const benefitEndTime = formatTime(live.benefit_meeting_end_time);
+                    const benefitPlaceText = benefitVenue?.name
+                        ? `${benefitVenue.name}${benefitVenue.area ? ` / ${benefitVenue.area}` : ""}${live.benefit_meeting_place_detail ? ` / ${live.benefit_meeting_place_detail}` : ""}`
+                        : live.benefit_meeting_place_detail ?? "会場未定";
+                    const liveTimeText = liveStartTime
+                        ? liveEndTime
+                            ? `${liveStartTime}-${liveEndTime}`
+                            : `${liveStartTime} 開演`
+                        : "時間未定";
+                    const benefitTimeText = live.benefit_meeting_time_note
+                        ? live.benefit_meeting_time_note
+                        : benefitStartTime
+                        ? benefitEndTime
+                            ? `${benefitStartTime}-${benefitEndTime}`
+                            : `${benefitStartTime} 開始予定`
+                        : "未定";
+
+                    return (
+                        <div
+                            key={live.id}
+                            className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 hover:border-pink-400/60"
+                        >
+                            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                                <div>
+                                    <p className="text-sm font-semibold text-pink-300">
+                                        {live.live_date}
+                                        {` / ${liveTimeText}`}
+                                    </p>
+
+                                    <h3 className="mt-1 text-xl font-bold">
+                                        {live.event_name}
+                                    </h3>
+
+                                    <p className="mt-2 text-sm text-zinc-400">
+                                        ライブ会場: {venue?.name ?? "会場未登録"}
+                                        {venue?.area && ` / ${venue.area}`}
+                                    </p>
+
+                                    <p className="mt-1 text-sm text-zinc-400">
+                                        特典会:{" "}
+                                        {benefitTimeText}
+                                        {benefitPlaceText && ` / ${benefitPlaceText}`}
+                                    </p>
+
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                        {live.ticket_url && (
+                                            <a
+                                                href={live.ticket_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="rounded-full bg-pink-500 px-3 py-1 text-xs font-bold text-white"
+                                            >
+                                                チケット
+                                            </a>
+                                        )}
+
+                                        {live.official_x_url && (
+                                            <a
+                                                href={live.official_x_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-200"
+                                            >
+                                                公式X
+                                            </a>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <Link
+                                    href={`/lives/${live.id}`}
+                                    className="w-fit rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-300 hover:bg-pink-500 hover:text-white"
+                                >
+                                    詳細を見る
+                                </Link>
+                            </div>
+                        </div>
+                    );
+                })}
+            </section>
+
             <section className="space-y-3 rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+                <div>
+                    <h2 className="text-2xl font-bold">過去ライブ履歴</h2>
+                    <p className="mt-2 text-sm text-zinc-400">
+                        月ごとのインデックスとページネーションで探せます。
+                    </p>
+                </div>
+
                 <div className="flex flex-wrap items-center gap-2">
                     <Link
                         href="/lives"
@@ -280,6 +458,8 @@ export default async function LivesPage({
                                     <div>
                                         <p className="text-sm font-semibold text-pink-300">
                                             {live.live_date}
+                                            {live.live_start_time &&
+                                                ` / ${formatTime(live.live_start_time)}${live.live_end_time ? `-${formatTime(live.live_end_time)}` : ""}`}
                                         </p>
 
                                         <h3 className="mt-1 text-xl font-bold">

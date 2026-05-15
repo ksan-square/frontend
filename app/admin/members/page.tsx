@@ -2,10 +2,14 @@ import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import { supabase } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminMembersPage() {
     const { data: members } = await supabase
         .from("members")
-        .select("id,name,member_color_name,member_color_code,is_active")
+        .select(
+            "id,name,member_color_name,member_color_code,lyric_display_color_code,is_active,sort_order",
+        )
         .eq("is_delete", false)
         .order("sort_order");
 
@@ -30,12 +34,36 @@ export default async function AdminMembersPage() {
                     <Link
                         key={member.id}
                         href={`/admin/members/${member.id}/edit`}
-                        className="block rounded-2xl border border-zinc-800 bg-zinc-900 p-5"
+                        className="block rounded-2xl border border-zinc-800 bg-zinc-900 p-5 hover:border-pink-400"
                     >
-                        <h2 className="text-xl font-bold">{member.name}</h2>
-                        <p className="text-sm text-zinc-400">
-                            {member.member_color_name ?? "カラー未設定"}
-                        </p>
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <h2 className="text-xl font-bold">{member.name}</h2>
+                                <p className="mt-1 text-sm text-zinc-400">
+                                    表示順: {member.sort_order}
+                                </p>
+                                <p className="mt-1 text-sm text-zinc-400">
+                                    {member.member_color_name ?? "カラー未設定"}
+                                </p>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <span
+                                    className="rounded-full px-3 py-1 text-xs font-semibold"
+                                    style={{
+                                        backgroundColor:
+                                            member.member_color_code ?? "#3f3f46",
+                                        color:
+                                            member.lyric_display_color_code ?? "#ffffff",
+                                    }}
+                                >
+                                    プレビュー
+                                </span>
+                                <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-300">
+                                    {member.is_active ? "有効" : "無効"}
+                                </span>
+                            </div>
+                        </div>
                     </Link>
                 ))}
             </div>

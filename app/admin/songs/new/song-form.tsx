@@ -21,37 +21,33 @@ export default function SongForm() {
         e.preventDefault();
         const userId = await getCurrentUserId();
 
-        const { error } = await supabase.from("songs").insert({
-            title,
-            slug,
-            order_no: orderNo,
-            description: description || null,
-            release_date: releaseDate || null,
-            lyricist: lyricist || null,
-            composer: composer || null,
-            arranger: arranger || null,
-            is_delete: false,
-            created_user: userId,
-            updated_user: userId,
-        });
+        const { data, error } = await supabase
+            .from("songs")
+            .insert({
+                title,
+                slug,
+                order_no: orderNo,
+                description: description || null,
+                release_date: releaseDate || null,
+                lyricist: lyricist || null,
+                composer: composer || null,
+                arranger: arranger || null,
+                is_delete: false,
+                created_user: userId,
+                updated_user: userId,
+            })
+            .select("id")
+            .single();
 
-        if (error) {
+        if (error || !data) {
             alert(`登録失敗: ${error.message}`);
             setMessage(`登録失敗: ${error.message}`);
             return;
         }
 
         alert("曲を登録しました。");
-        setTitle("");
-        setSlug("");
-        setOrderNo(orderNo + 1);
-        setDescription("");
-        setReleaseDate("");
-        setLyricist("");
-        setComposer("");
-        setArranger("");
-        setMessage("曲を登録しました。");
         router.refresh();
+        router.push(`/admin/songs/${data.id}/edit`);
     }
 
     return (

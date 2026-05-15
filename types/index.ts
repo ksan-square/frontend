@@ -35,6 +35,26 @@ export type SongPart = {
     }[];
 };
 
+export type SongContentBlock = {
+    id: string;
+    order_no: number;
+    block_type: "heading" | "lyric" | "call" | "note";
+    section_label: string | null;
+    body_markdown: string;
+    note: string | null;
+    song_content_block_members: {
+        is_delete?: boolean;
+        display_order: number;
+        members: Member[] | null;
+    }[];
+};
+
+export type SongMarkdownPage = {
+    id: string;
+    song_id: string;
+    body_markdown: string;
+};
+
 export type Venue = {
     id: string;
     name: string;
@@ -45,9 +65,19 @@ export type Venue = {
 export type Live = {
     id: string;
     live_date: string;
+    same_day_order?: number;
+    live_start_time: string | null;
+    live_end_time: string | null;
+    benefit_meeting_start_time: string | null;
+    benefit_meeting_end_time: string | null;
+    benefit_meeting_time_note: string | null;
+    benefit_meeting_place_detail: string | null;
+    ticket_url: string | null;
+    official_x_url: string | null;
     event_name: string;
     memo: string | null;
     venues: Venue | null;
+    benefit_venue: Venue | null;
 };
 
 export type SetlistItem = {
