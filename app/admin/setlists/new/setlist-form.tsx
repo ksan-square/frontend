@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getCurrentUserId } from "@/lib/current-user";
 import { supabase } from "@/lib/supabase";
 
 type Live = {
@@ -28,12 +29,16 @@ export default function SetlistForm({ lives, songs }: Props) {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        const userId = await getCurrentUserId();
 
         const { error } = await supabase.from("setlist_items").insert({
             live_id: liveId,
             song_id: songId,
             order_no: orderNo,
             note: note || null,
+            is_delete: false,
+            created_user: userId,
+            updated_user: userId,
         });
 
         if (error) {

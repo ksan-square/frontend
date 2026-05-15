@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Breadcrumbs from "@/app/_components/breadcrumbs";
 import { supabase } from "@/lib/supabase";
 import type { Live, SetlistItem } from "@/types";
 
@@ -26,6 +27,7 @@ export default async function LiveDetailPage({ params }: Props) {
             )
         `)
         .eq("id", id)
+        .eq("is_delete", false)
         .single();
 
     if (liveError || !liveData) {
@@ -44,10 +46,12 @@ export default async function LiveDetailPage({ params }: Props) {
             note,
             songs (
                 title,
-                slug
+                slug,
+                is_delete
             )
         `)
         .eq("live_id", id)
+        .eq("is_delete", false)
         .order("order_no");
 
     if (setlistError) {
@@ -62,6 +66,13 @@ export default async function LiveDetailPage({ params }: Props) {
 
     return (
         <main className="space-y-8">
+            <Breadcrumbs
+                items={[
+                    { href: "/lives", label: "ライブ履歴" },
+                    { label: live.event_name },
+                ]}
+            />
+
             <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6">
                 <p className="text-sm font-semibold text-pink-300">
                     {live.live_date}
@@ -117,6 +128,8 @@ export default async function LiveDetailPage({ params }: Props) {
                         const song = Array.isArray(item.songs)
                             ? item.songs[0]
                             : item.songs;
+                        const visibleSong =
+                            song && !song.is_delete ? song : null;
 
                         return (
                             <li
@@ -129,12 +142,12 @@ export default async function LiveDetailPage({ params }: Props) {
                                     </span>
 
                                     <div>
-                                        {song ? (
+                                        {visibleSong ? (
                                             <Link
-                                                href={`/songs/${song.slug}`}
+                                                href={`/songs/${visibleSong.slug}`}
                                                 className="text-lg font-bold hover:text-pink-300"
                                             >
-                                                {song.title}
+                                                {visibleSong.title}
                                             </Link>
                                         ) : (
                                             <p className="text-lg font-bold">

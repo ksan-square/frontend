@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getCurrentUserId } from "@/lib/current-user";
 import { supabaseClient } from "@/lib/supabase-client";
 import SortableSetlist from "./sortable-setlist";
 
@@ -40,10 +41,12 @@ export default function SetlistEditor({
                 note,
                 songs (
                     id,
-                    title
+                    title,
+                    is_delete
                 )
             `)
             .eq("live_id", liveId)
+            .eq("is_delete", false)
             .order("order_no");
 
         setItems((data ?? []) as unknown as SetlistItem[]);
@@ -58,6 +61,7 @@ export default function SetlistEditor({
             return;
         }
 
+        const userId = await getCurrentUserId();
         const nextOrder =
             items.length > 0
                 ? Math.max(...items.map((v) => v.order_no)) + 1
@@ -70,6 +74,9 @@ export default function SetlistEditor({
                 song_id: songId,
                 order_no: nextOrder,
                 note: note || null,
+                is_delete: false,
+                created_user: userId,
+                updated_user: userId,
             });
 
         if (error) {
@@ -84,10 +91,20 @@ export default function SetlistEditor({
     }
 
     async function handleDelete(id: string) {
-        await supabaseClient
+        const userId = await getCurrentUserId();
+        const { error } = await supabaseClient
             .from("setlist_items")
-            .delete()
-            .eq("id", id);
+            .update({
+                is_delete: true,
+                updated_user: userId,
+            })
+            .eq("id", id)
+            .eq("is_delete", false);
+
+        if (error) {
+            setMessage(error.message);
+            return;
+        }
 
         await fetchSetlist();
     }
@@ -148,6 +165,7 @@ export default function SetlistEditor({
             <SortableSetlist
                 items={items}
                 onDelete={handleDelete}
+                onError={setMessage}
             />
         </section>
     );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Breadcrumbs from "@/app/_components/breadcrumbs";
 import Pagination from "@/app/_components/pagination";
 import { supabase } from "@/lib/supabase";
 import DeleteButton from "./delete-button";
@@ -153,6 +154,7 @@ export default async function AdminLivesPage({
     const { data: liveDates, error: liveDatesError } = await supabase
         .from("lives")
         .select("live_date")
+        .eq("is_delete", false)
         .order("live_date", { ascending: false });
 
     if (liveDatesError) {
@@ -176,6 +178,7 @@ export default async function AdminLivesPage({
                 area
             )
         `, { count: "exact" })
+        .eq("is_delete", false)
         .order("live_date", { ascending: false })
         .order("same_day_order", { ascending: true });
 
@@ -206,6 +209,13 @@ export default async function AdminLivesPage({
 
     return (
         <main className="space-y-6">
+            <Breadcrumbs
+                items={[
+                    { href: "/admin", label: "管理" },
+                    { label: "ライブ管理" },
+                ]}
+            />
+
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <h1 className="text-3xl font-bold">
                     ライブ管理

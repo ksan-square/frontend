@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Breadcrumbs from "@/app/_components/breadcrumbs";
 import Pagination from "@/app/_components/pagination";
 import { supabase } from "@/lib/supabase";
 import type { Live } from "@/types";
@@ -116,6 +117,7 @@ export default async function LivesPage({
     const { data: liveDates, error: liveDatesError } = await supabase
         .from("lives")
         .select("live_date")
+        .eq("is_delete", false)
         .order("live_date", { ascending: false });
 
     if (liveDatesError) {
@@ -154,6 +156,7 @@ export default async function LivesPage({
             google_map_url
         )
     `)
+        .eq("is_delete", false)
         .order("live_date", { ascending: false })
         .order("same_day_order", { ascending: true });
 
@@ -179,6 +182,8 @@ export default async function LivesPage({
 
     return (
         <main className="space-y-8">
+            <Breadcrumbs items={[{ label: "ライブ履歴" }]} />
+
             <section>
                 <p className="text-sm font-semibold text-pink-300">
                     Lives

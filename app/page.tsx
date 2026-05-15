@@ -6,15 +6,18 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const { count: songCount } = await supabase
     .from("songs")
-    .select("*", { count: "exact", head: true });
+    .select("*", { count: "exact", head: true })
+    .eq("is_delete", false);
 
   const { count: liveCount } = await supabase
     .from("lives")
-    .select("*", { count: "exact", head: true });
+    .select("*", { count: "exact", head: true })
+    .eq("is_delete", false);
 
   const { data: notices } = await supabase
     .from("notices")
     .select("id,title,tag,body,published_at")
+    .eq("is_delete", false)
     .eq("is_published", true)
     .order("published_at", { ascending: false })
     .limit(5);

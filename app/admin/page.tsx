@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Breadcrumbs from "@/app/_components/breadcrumbs";
 import LogoutButton from "./logout-button";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,8 @@ export default function AdminPage() {
 
     return (
         <main className="space-y-8">
+            <Breadcrumbs items={[{ label: "管理" }]} />
+
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold">管理画面</h1>
                 <LogoutButton />
