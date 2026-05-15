@@ -2,6 +2,8 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import DeleteButton from "./delete-button";
 
+export const dynamic = "force-dynamic";
+
 export default async function VenuesPage() {
     const { data: venues, error } = await supabase
         .from("venues")

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminSongsPage() {
     const { data: songs, error } = await supabase
         .from("songs")

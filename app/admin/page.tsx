@@ -1,6 +1,8 @@
 import Link from "next/link";
 import LogoutButton from "./logout-button";
 
+export const dynamic = "force-dynamic";
+
 export default function AdminPage() {
     const links = [
         { href: "/admin/members", title: "メンバー管理" },
