@@ -8,10 +8,8 @@ export default function AdminPage() {
     const links = [
         { href: "/admin/members", title: "メンバー管理" },
         { href: "/admin/songs", title: "曲管理" },
-        { href: "/admin/song-parts", title: "歌割・コール管理" },
         { href: "/admin/venues", title: "会場管理" },
         { href: "/admin/lives", title: "ライブ管理" },
-        { href: "/admin/setlists", title: "セトリ管理" },
         { href: "/admin/notices", title: "お知らせ管理" },
     ];
 
