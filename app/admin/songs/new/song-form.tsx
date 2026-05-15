@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
 export default function SongForm() {
+    const router = useRouter();
     const [title, setTitle] = useState("");
     const [slug, setSlug] = useState("");
     const [description, setDescription] = useState("");
@@ -27,10 +29,12 @@ export default function SongForm() {
         });
 
         if (error) {
+            alert(`登録失敗: ${error.message}`);
             setMessage(`登録失敗: ${error.message}`);
             return;
         }
 
+        alert("曲を登録しました。");
         setTitle("");
         setSlug("");
         setDescription("");
@@ -39,6 +43,7 @@ export default function SongForm() {
         setComposer("");
         setArranger("");
         setMessage("曲を登録しました。");
+        router.refresh();
     }
 
     return (

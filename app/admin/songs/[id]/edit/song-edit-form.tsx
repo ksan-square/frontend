@@ -44,11 +44,30 @@ export default function SongEditForm({ song }: { song: Song }) {
             .eq("id", song.id);
 
         if (error) {
+            alert(`更新失敗: ${error.message}`);
             setMessage(`更新失敗: ${error.message}`);
             return;
         }
 
+        alert("更新しました。");
         setMessage("更新しました。");
+        router.refresh();
+    }
+
+    async function handleDelete() {
+        const ok = confirm("曲を削除しますか？");
+        if (!ok) {
+            return;
+        }
+
+        const { error } = await supabase.from("songs").delete().eq("id", song.id);
+        if (error) {
+            alert(`削除失敗: ${error.message}`);
+            return;
+        }
+
+        alert("曲を削除しました。");
+        router.push("/admin/songs");
         router.refresh();
     }
 
@@ -64,9 +83,14 @@ export default function SongEditForm({ song }: { song: Song }) {
 
             <textarea className="w-full rounded-xl bg-zinc-950 p-3" value={description} onChange={(e) => setDescription(e.target.value)} />
 
-            <button className="rounded-full bg-pink-500 px-5 py-3 font-bold">
-                更新
-            </button>
+            <div className="flex gap-2">
+                <button className="rounded-full bg-pink-500 px-5 py-3 font-bold">
+                    更新
+                </button>
+                <button type="button" onClick={handleDelete} className="rounded-full bg-red-500 px-5 py-3 font-bold text-white">
+                    削除
+                </button>
+            </div>
 
             {message && <p>{message}</p>}
         </form>

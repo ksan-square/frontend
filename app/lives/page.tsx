@@ -3,6 +3,8 @@ import { supabase } from "@/lib/supabase";
 import type { Live } from "@/types";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 export default async function LivesPage() {
     const { data, error } = await supabase
@@ -21,7 +23,6 @@ export default async function LivesPage() {
     `)
         .order("live_date", { ascending: false });
 
-    console.log(JSON.stringify(data, null, 2));
 
     if (error) {
         return (

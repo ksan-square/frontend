@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabaseClient } from "@/lib/supabase-client";
+import { useRouter } from "next/navigation";
 
 type Venue = {
     id: string;
@@ -10,6 +11,7 @@ type Venue = {
 };
 
 export default function LiveForm({ venues }: { venues: Venue[] }) {
+    const router = useRouter();
     const [liveDate, setLiveDate] = useState("");
     const [sameDayOrder, setSameDayOrder] = useState(1);
     const [eventName, setEventName] = useState("");
@@ -29,13 +31,16 @@ export default function LiveForm({ venues }: { venues: Venue[] }) {
         });
 
         if (error) {
+            alert(`登録失敗: ${error.message}`);
             setMessage(`登録失敗: ${error.message}`);
             return;
         }
 
+        alert("ライブを登録しました。");
         setMessage("ライブを登録した。");
         setEventName("");
         setMemo("");
+        router.refresh();
     }
 
     return (

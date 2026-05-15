@@ -9,6 +9,7 @@ export default function LiveForm({ venues, initialData }: any) {
     async function handleSubmit(formData: FormData) {
         await updateLive(initialData.id, formData);
 
+        alert("ライブを更新しました。");
         router.refresh();
         router.push("/admin/lives");
     }
