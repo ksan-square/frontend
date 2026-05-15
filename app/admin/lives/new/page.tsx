@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
-import LiveForm from "../live-form";
+import LiveForm from "./live-form";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";

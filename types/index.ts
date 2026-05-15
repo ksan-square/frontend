@@ -45,9 +45,19 @@ export type Venue = {
 export type Live = {
     id: string;
     live_date: string;
+    same_day_order?: number;
+    live_start_time: string | null;
+    live_end_time: string | null;
+    benefit_meeting_start_time: string | null;
+    benefit_meeting_end_time: string | null;
+    benefit_meeting_time_note: string | null;
+    benefit_meeting_place_detail: string | null;
+    ticket_url: string | null;
+    official_x_url: string | null;
     event_name: string;
     memo: string | null;
     venues: Venue | null;
+    benefit_venue: Venue | null;
 };
 
 export type SetlistItem = {

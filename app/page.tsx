@@ -3,7 +3,18 @@ import { supabase } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
+function formatTime(time: string | null) {
+  return time ? time.slice(0, 5) : null;
+}
+
 export default async function Home() {
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+
   const [
     { count: songCount },
     { count: liveCount },
@@ -12,6 +23,8 @@ export default async function Home() {
     { data: latestSongs },
     { data: latestLives },
     { data: latestWikiPages },
+    { data: nextLives },
+    { data: upcomingPreviewLives },
   ] = await Promise.all([
     supabase
       .from("songs")
@@ -41,8 +54,9 @@ export default async function Home() {
       .limit(3),
     supabase
       .from("lives")
-      .select("id,live_date,event_name,venues(name,area)")
+      .select("id,live_date,live_start_time,live_end_time,event_name,venues(name,area)")
       .eq("is_delete", false)
+      .lt("live_date", today)
       .order("live_date", { ascending: false })
       .order("same_day_order", { ascending: true })
       .limit(3),
@@ -52,6 +66,24 @@ export default async function Home() {
       .eq("is_delete", false)
       .eq("is_published", true)
       .order("updated_at", { ascending: false })
+      .limit(3),
+    supabase
+      .from("lives")
+      .select("id,live_date,live_start_time,live_end_time,benefit_meeting_start_time,benefit_meeting_end_time,benefit_meeting_time_note,benefit_meeting_place_detail,ticket_url,official_x_url,event_name,venues!lives_venue_id_fkey(name,area),benefit_venue:venues!lives_benefit_venue_id_fkey(name,area)")
+      .eq("is_delete", false)
+      .gte("live_date", today)
+      .order("live_date", { ascending: true })
+      .order("live_start_time", { ascending: true })
+      .order("same_day_order", { ascending: true })
+      .limit(1),
+    supabase
+      .from("lives")
+      .select("id,live_date,live_start_time,live_end_time,event_name,venues(name,area)")
+      .eq("is_delete", false)
+      .gte("live_date", today)
+      .order("live_date", { ascending: true })
+      .order("live_start_time", { ascending: true })
+      .order("same_day_order", { ascending: true })
       .limit(3),
   ]);
 
@@ -79,6 +111,41 @@ export default async function Home() {
   function formatDate(date: string) {
     return new Date(date).toLocaleDateString("ja-JP");
   }
+
+  const nextLive = nextLives?.[0];
+  const nextLiveVenue = nextLive
+    ? Array.isArray(nextLive.venues)
+      ? nextLive.venues[0]
+      : nextLive.venues
+    : null;
+  const nextBenefitVenue = nextLive
+    ? Array.isArray(nextLive.benefit_venue)
+      ? nextLive.benefit_venue[0]
+      : nextLive.benefit_venue
+    : null;
+  const nextBenefitPlaceText = nextLive
+    ? nextBenefitVenue?.name
+      ? `${nextBenefitVenue.name}${nextBenefitVenue.area ? ` / ${nextBenefitVenue.area}` : ""}${nextLive.benefit_meeting_place_detail ? ` / ${nextLive.benefit_meeting_place_detail}` : ""}`
+      : nextLive.benefit_meeting_place_detail ?? "会場未定"
+    : null;
+  const livePreviewLives =
+    latestLives && latestLives.length > 0 ? latestLives : upcomingPreviewLives ?? [];
+  const nextLiveTimeText = nextLive
+    ? nextLive.live_start_time
+      ? nextLive.live_end_time
+        ? `${formatTime(nextLive.live_start_time)}-${formatTime(nextLive.live_end_time)}`
+        : `${formatTime(nextLive.live_start_time)} 開演`
+      : "時間未定"
+    : null;
+  const nextBenefitTimeText = nextLive
+    ? nextLive.benefit_meeting_time_note
+      ? nextLive.benefit_meeting_time_note
+      : nextLive.benefit_meeting_start_time
+      ? nextLive.benefit_meeting_end_time
+        ? `${formatTime(nextLive.benefit_meeting_start_time)}-${formatTime(nextLive.benefit_meeting_end_time)}`
+        : `${formatTime(nextLive.benefit_meeting_start_time)} 開始`
+      : "未定"
+    : null;
 
   return (
     <main className="space-y-8">
@@ -119,6 +186,39 @@ export default async function Home() {
           ))}
         </div>
       </section>
+
+      {nextLive && (
+        <section className="rounded-2xl border border-pink-500/40 bg-zinc-900 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-pink-300">
+                次回のライブ
+              </p>
+              <h2 className="text-2xl font-bold">{nextLive.event_name}</h2>
+              <p className="text-sm text-zinc-300">
+                {nextLive.live_date}
+                {nextLiveTimeText && ` / ${nextLiveTimeText}`}
+              </p>
+              <p className="text-sm text-zinc-400">
+                {nextLiveVenue?.name ?? "会場未登録"}
+                {nextLiveVenue?.area && ` / ${nextLiveVenue.area}`}
+              </p>
+              <p className="text-sm text-zinc-400">
+                特典会:{" "}
+                {nextBenefitTimeText}
+                {nextBenefitPlaceText && ` / ${nextBenefitPlaceText}`}
+              </p>
+            </div>
+
+            <Link
+              href={`/lives/${nextLive.id}`}
+              className="rounded-full bg-pink-500 px-4 py-2 text-sm font-bold text-white"
+            >
+              詳細を見る
+            </Link>
+          </div>
+        </section>
+      )}
 
       <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-4">
@@ -214,10 +314,12 @@ export default async function Home() {
           </div>
 
           <div className="space-y-3">
-            {latestLives?.map((live) => {
+            {livePreviewLives?.map((live) => {
               const venue = Array.isArray(live.venues)
                 ? live.venues[0]
                 : live.venues;
+              const startTime = formatTime(live.live_start_time ?? null);
+              const endTime = formatTime(live.live_end_time ?? null);
 
               return (
                 <Link
@@ -227,6 +329,8 @@ export default async function Home() {
                 >
                   <p className="text-sm font-semibold text-pink-300">
                     {live.live_date}
+                    {startTime &&
+                      ` / ${endTime ? `${startTime}-${endTime}` : startTime}`}
                   </p>
                   <h3 className="mt-1 font-bold">{live.event_name}</h3>
                   <p className="mt-1 text-sm text-zinc-400">
