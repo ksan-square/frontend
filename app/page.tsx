@@ -1,5 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+
+export const metadata: Metadata = {
+  title: "ホーム",
+  description:
+    "曲、ライブ、Wiki、お知らせをまとめて確認できるこしあんスクエアのトップページです。",
+  alternates: {
+    canonical: "/",
+  },
+};
 
 export const dynamic = "force-dynamic";
 

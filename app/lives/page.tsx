@@ -1,8 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import Pagination from "@/app/_components/pagination";
 import { supabase } from "@/lib/supabase";
 import type { Live } from "@/types";
+
+export const metadata: Metadata = {
+    title: "ライブ予定・履歴",
+    description:
+        "今後のライブ予定と過去ライブ履歴、会場情報、セトリを確認できるページです。",
+    alternates: {
+        canonical: "/lives",
+    },
+};
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import RichMarkdown from "@/app/_components/rich-markdown";
+import {
+    DEFAULT_DESCRIPTION,
+    createDescription,
+    joinDescriptionParts,
+} from "@/lib/seo";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import CommentForm from "./comment-form";
 import DeleteCommentButton from "./delete-comment-button";
@@ -10,6 +16,55 @@ export const dynamic = "force-dynamic";
 type Props = {
     params: Promise<{ slug: string }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { slug } = await params;
+    const authClient = await createSupabaseServerClient();
+    const {
+        data: { user },
+    } = await authClient.auth.getUser();
+
+    let query = authClient
+        .from("wiki_pages")
+        .select("title,slug,body_markdown,is_published,updated_at")
+        .eq("slug", slug)
+        .eq("is_delete", false);
+
+    if (!user) {
+        query = query.eq("is_published", true);
+    }
+
+    const { data: page } = await query.maybeSingle();
+
+    if (!page) {
+        return {
+            title: "Wikiページが見つかりません",
+            description: DEFAULT_DESCRIPTION,
+        };
+    }
+
+    const description = joinDescriptionParts([
+        createDescription(page.body_markdown, 120),
+        page.is_published ? null : "下書き",
+    ]);
+
+    return {
+        title: page.title,
+        description,
+        alternates: {
+            canonical: `/wiki/${page.slug}`,
+        },
+        openGraph: {
+            title: page.title,
+            description,
+            url: `/wiki/${page.slug}`,
+        },
+        twitter: {
+            title: page.title,
+            description,
+        },
+    };
+}
 
 type WikiPage = {
     id: string;

@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import SongRichMarkdown from "@/app/_components/song-rich-markdown";
+import {
+    DEFAULT_DESCRIPTION,
+    createDescription,
+    joinDescriptionParts,
+} from "@/lib/seo";
 import { supabase } from "@/lib/supabase";
 import type { Member, SongMarkdownPage, SongPart } from "@/types";
 
@@ -8,6 +14,56 @@ export const dynamic = "force-dynamic";
 type Props = {
     params: Promise<{ slug: string }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { slug } = await params;
+
+    const { data: song } = await supabase
+        .from("songs")
+        .select("id,title,description,lyricist,composer,arranger")
+        .eq("slug", slug)
+        .eq("is_delete", false)
+        .maybeSingle();
+
+    if (!song) {
+        return {
+            title: "曲が見つかりません",
+            description: DEFAULT_DESCRIPTION,
+        };
+    }
+
+    const { data: markdownPage } = await supabase
+        .from("song_markdown_pages")
+        .select("body_markdown")
+        .eq("song_id", song.id)
+        .eq("is_delete", false)
+        .maybeSingle();
+
+    const bodyDescription = createDescription(markdownPage?.body_markdown, 90);
+    const description = joinDescriptionParts([
+        song.description,
+        bodyDescription,
+        song.lyricist ? `作詞 ${song.lyricist}` : null,
+        song.composer ? `作曲 ${song.composer}` : null,
+    ]);
+
+    return {
+        title: song.title,
+        description,
+        alternates: {
+            canonical: `/songs/${slug}`,
+        },
+        openGraph: {
+            title: song.title,
+            description,
+            url: `/songs/${slug}`,
+        },
+        twitter: {
+            title: song.title,
+            description,
+        },
+    };
+}
 
 function createAnchorId(value: string) {
     return value

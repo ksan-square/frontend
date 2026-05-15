@@ -1,10 +1,32 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import GoogleAnalytics from "@/app/_components/google-analytics";
+import { DEFAULT_DESCRIPTION, SITE_NAME, createMetadataBase } from "@/lib/seo";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "こしあんスクエア",
-  description: "コール・歌割・セトリDB",
+  metadataBase: createMetadataBase(),
+  title: {
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: DEFAULT_DESCRIPTION,
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: SITE_NAME,
+    description: DEFAULT_DESCRIPTION,
+    url: "/",
+    siteName: SITE_NAME,
+    locale: "ja_JP",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: DEFAULT_DESCRIPTION,
+  },
 };
 
 export default function RootLayout({
@@ -40,6 +62,7 @@ export default function RootLayout({
 
         <div className="mx-auto max-w-5xl px-4 py-8">{children}</div>
       </body>
+      <GoogleAnalytics />
     </html>
   );
 }
