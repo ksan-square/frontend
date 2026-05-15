@@ -28,6 +28,9 @@ export default function RootLayout({
               <Link href="/lives" className="hover:text-white">
                 ライブ
               </Link>
+              <Link href="/wiki" className="hover:text-white">
+                Wiki
+              </Link>
               <Link href="/admin" className="hover:text-white">
                 管理画面
               </Link>
