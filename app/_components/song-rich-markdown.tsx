@@ -104,9 +104,7 @@ const rules: DecorationRule[] = [
             return (
                 <span
                     key={key}
-                    className="group relative inline whitespace-pre-wrap focus:outline-none focus:ring-1 focus:ring-white/40"
-                    tabIndex={0}
-                    title={memberLabel || undefined}
+                    className="inline-flex flex-col items-start whitespace-pre-wrap align-top"
                     style={{
                         color:
                             firstMember?.lyric_display_color_code ??
@@ -115,11 +113,11 @@ const rules: DecorationRule[] = [
                     }}
                 >
                     {memberLabel && (
-                        <span className="pointer-events-none absolute left-0 top-0 -translate-y-[calc(100%+0.3rem)] rounded-full bg-zinc-950/95 px-2 py-1 text-[10px] font-semibold text-zinc-200 opacity-0 shadow-sm ring-1 ring-zinc-700 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 group-active:opacity-100">
+                        <span className="block leading-none text-[11px] font-semibold opacity-70">
                             [{memberLabel}]
                         </span>
                     )}
-                    {children}
+                    <span className="block leading-snug">{children}</span>
                 </span>
             );
         },
@@ -130,7 +128,7 @@ const rules: DecorationRule[] = [
             return (
                 <span
                     key={key}
-                    className="flex flex-col items-start whitespace-pre-wrap rounded-xl border border-pink-500/30 bg-pink-500/10 px-3 py-2"
+                    className="flex flex-col items-start whitespace-pre-wrap rounded-xl border border-pink-500/30 bg-pink-500/10 px-3 py-1.5"
                 >
                     <span className="block leading-none text-[11px] font-semibold text-pink-300">
                         CALL

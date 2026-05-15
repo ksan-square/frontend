@@ -202,16 +202,20 @@ export default async function SongDetailPage({ params }: Props) {
                 <h2 className="text-2xl font-bold">歌割・コール</h2>
 
                 {sectionIndex.length > 0 && (
-                    <div className="flex flex-wrap gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
-                        {sectionIndex.map((item) => (
-                            <a
-                                key={item.id}
-                                href={`#${item.anchorId}`}
-                                className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm hover:bg-pink-500"
-                            >
-                                {item.label}
-                            </a>
-                        ))}
+                    <div className="sticky top-20 z-20">
+                        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/95 p-4 backdrop-blur">
+                            <div className="flex max-h-28 flex-wrap gap-2 overflow-y-auto pr-1">
+                                {sectionIndex.map((item) => (
+                                    <a
+                                        key={item.id}
+                                        href={`#${item.anchorId}`}
+                                        className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm hover:bg-pink-500"
+                                    >
+                                        {item.label}
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 )}
 
