@@ -2,6 +2,8 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import DeleteButton from "./delete-button";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminLivesPage() {
     const { data: lives, error } = await supabase
         .from("lives")

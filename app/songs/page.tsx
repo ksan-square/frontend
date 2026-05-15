@@ -2,6 +2,8 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import type { Song } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 export default async function SongsPage() {
     const { data, error, count } = await supabase
         .from("songs")

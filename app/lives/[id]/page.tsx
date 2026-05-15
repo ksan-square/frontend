@@ -2,6 +2,8 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import type { Live, SetlistItem } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 type Props = {
     params: Promise<{ id: string }>;
 };

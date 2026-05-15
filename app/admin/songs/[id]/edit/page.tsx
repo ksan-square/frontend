@@ -1,6 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import SongEditForm from "./song-edit-form";
 
+export const dynamic = "force-dynamic";
+
 type Props = {
     params: Promise<{ id: string }>;
 };

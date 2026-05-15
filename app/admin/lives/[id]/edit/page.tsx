@@ -2,6 +2,8 @@ import { supabase } from "@/lib/supabase";
 import LiveForm from "../../live-form";
 import SetlistEditor from "../../setlist-editor";
 
+export const dynamic = "force-dynamic";
+
 type Props = {
     params: Promise<{ id: string }>;
 };

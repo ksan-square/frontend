@@ -1,6 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import type { SongPart } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 type Props = {
     params: Promise<{ slug: string }>;
 };
