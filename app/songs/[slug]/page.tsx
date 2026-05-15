@@ -1,3 +1,4 @@
+import Breadcrumbs from "@/app/_components/breadcrumbs";
 import { supabase } from "@/lib/supabase";
 import type { SongPart } from "@/types";
 
@@ -12,7 +13,9 @@ function getVocalLabel(part: SongPart) {
     if (part.vocal_type === "none") return "歌唱なし";
 
     const names = part.song_part_members
-        ?.flatMap((spm) => spm.members ?? [])
+        ?.filter((spm) => !spm.is_delete)
+        .flatMap((spm) => spm.members ?? [])
+        .filter((member) => !member.is_delete)
         .map((member) => member.name);
 
     return names.length > 0 ? names.join(" / ") : "未設定";
@@ -25,6 +28,7 @@ export default async function SongDetailPage({ params }: Props) {
         .from("songs")
         .select("id,title,description,lyricist,composer,arranger")
         .eq("slug", slug)
+        .eq("is_delete", false)
         .single();
 
     if (songError || !song) {
@@ -43,10 +47,12 @@ export default async function SongDetailPage({ params }: Props) {
       call_text,
       note,
       song_part_members (
+        is_delete,
         display_order,
         members (
           id,
           name,
+          is_delete,
           member_color_name,
           member_color_code,
           lyric_display_color_code
@@ -54,6 +60,7 @@ export default async function SongDetailPage({ params }: Props) {
       )
     `)
         .eq("song_id", song.id)
+        .eq("is_delete", false)
         .order("order_no");
 
     if (partsError) {
@@ -64,6 +71,13 @@ export default async function SongDetailPage({ params }: Props) {
 
     return (
         <main className="space-y-8">
+            <Breadcrumbs
+                items={[
+                    { href: "/songs", label: "曲一覧" },
+                    { label: song.title },
+                ]}
+            />
+
             <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6">
                 <p className="text-sm font-semibold text-pink-300">Song</p>
                 <h1 className="mt-2 text-3xl font-bold">{song.title}</h1>
@@ -91,8 +105,9 @@ export default async function SongDetailPage({ params }: Props) {
                 <div className="space-y-3">
                     {songParts.map((part) => {
                         const members = part.song_part_members
+                            ?.filter((spm) => !spm.is_delete)
                             ?.flatMap((spm) => spm.members ?? [])
-                            .filter(Boolean);
+                            .filter((member) => member && !member.is_delete);
 
                         return (
                             <article

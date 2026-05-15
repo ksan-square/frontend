@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getCurrentUserId } from "@/lib/current-user";
 import { supabaseClient } from "@/lib/supabase-client";
 
 export default function MemberForm() {
@@ -13,6 +14,7 @@ export default function MemberForm() {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        const userId = await getCurrentUserId();
 
         const { error } = await supabaseClient.from("members").insert({
             name,
@@ -20,6 +22,9 @@ export default function MemberForm() {
             member_color_code: colorCode,
             lyric_display_color_code: textColor,
             profile: profile || null,
+            is_delete: false,
+            created_user: userId,
+            updated_user: userId,
         });
 
         if (error) {

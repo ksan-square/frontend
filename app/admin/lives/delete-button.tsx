@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { getCurrentUserId } from "@/lib/current-user";
 import { supabaseClient } from "@/lib/supabase-client";
 
 export default function DeleteButton({
@@ -19,10 +20,15 @@ export default function DeleteButton({
             return;
         }
 
+        const userId = await getCurrentUserId();
         const setlistDeleteResult = await supabaseClient
             .from("setlist_items")
-            .delete()
-            .eq("live_id", id);
+            .update({
+                is_delete: true,
+                updated_user: userId,
+            })
+            .eq("live_id", id)
+            .eq("is_delete", false);
 
         if (setlistDeleteResult.error) {
             alert(`削除失敗: ${setlistDeleteResult.error.message}`);
@@ -31,8 +37,12 @@ export default function DeleteButton({
 
         const liveDeleteResult = await supabaseClient
             .from("lives")
-            .delete()
-            .eq("id", id);
+            .update({
+                is_delete: true,
+                updated_user: userId,
+            })
+            .eq("id", id)
+            .eq("is_delete", false);
 
         if (liveDeleteResult.error) {
             alert(`削除失敗: ${liveDeleteResult.error.message}`);

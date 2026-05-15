@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getCurrentUserId } from "@/lib/current-user";
 import { supabaseClient } from "@/lib/supabase-client";
 
 type Song = { id: string; title: string };
@@ -33,6 +34,7 @@ export default function SongPartForm({ songs, members }: Props) {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        const userId = await getCurrentUserId();
 
         const { data: insertedPart, error: partError } = await supabaseClient
             .from("song_parts")
@@ -45,6 +47,9 @@ export default function SongPartForm({ songs, members }: Props) {
                 lyric_text: lyricText || null,
                 call_text: callText || null,
                 note: note || null,
+                is_delete: false,
+                created_user: userId,
+                updated_user: userId,
             })
             .select("id")
             .single();
@@ -59,6 +64,9 @@ export default function SongPartForm({ songs, members }: Props) {
                 song_part_id: insertedPart.id,
                 member_id: memberId,
                 display_order: index + 1,
+                is_delete: false,
+                created_user: userId,
+                updated_user: userId,
             }));
 
             const { error: memberError } = await supabaseClient

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Breadcrumbs from "@/app/_components/breadcrumbs";
 import Pagination from "@/app/_components/pagination";
 import { supabase } from "@/lib/supabase";
 
@@ -91,7 +92,8 @@ export default async function AdminSongsPage({
     const { data: songIndexRows, error: songIndexError } = await supabase
         .from("songs")
         .select("id,title")
-        .order("title");
+        .eq("is_delete", false)
+        .order("order_no", { ascending: true });
 
     if (songIndexError) {
         return <main>取得失敗: {songIndexError.message}</main>;
@@ -117,8 +119,9 @@ export default async function AdminSongsPage({
 
     let songsQuery = supabase
         .from("songs")
-        .select("id,title,slug,lyricist,composer,arranger")
-        .order("title");
+        .select("id,title,slug,order_no,lyricist,composer,arranger")
+        .eq("is_delete", false)
+        .order("order_no", { ascending: true });
 
     if (pageSongIds) {
         songsQuery =
@@ -137,6 +140,13 @@ export default async function AdminSongsPage({
 
     return (
         <main className="space-y-6">
+            <Breadcrumbs
+                items={[
+                    { href: "/admin", label: "管理" },
+                    { label: "曲管理" },
+                ]}
+            />
+
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold">曲管理</h1>
 

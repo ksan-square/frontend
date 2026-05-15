@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Breadcrumbs from "@/app/_components/breadcrumbs";
 import { supabase } from "@/lib/supabase";
 import DeleteButton from "./delete-button";
 
@@ -27,6 +28,13 @@ export default async function VenuesPage() {
 
     return (
         <main className="space-y-6">
+            <Breadcrumbs
+                items={[
+                    { href: "/admin", label: "管理" },
+                    { label: "会場管理" },
+                ]}
+            />
+
             <div className="flex items-center justify-between">
                 <div>
                     <p className="text-sm font-semibold text-pink-300">

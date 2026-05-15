@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getCurrentUserId } from "@/lib/current-user";
 import { supabaseClient } from "@/lib/supabase-client";
 import { useRouter } from "next/navigation";
 
@@ -21,6 +22,7 @@ export default function LiveForm({ venues }: { venues: Venue[] }) {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        const userId = await getCurrentUserId();
 
         const { error } = await supabaseClient.from("lives").insert({
             live_date: liveDate,
@@ -28,6 +30,9 @@ export default function LiveForm({ venues }: { venues: Venue[] }) {
             event_name: eventName,
             venue_id: venueId || null,
             memo: memo || null,
+            is_delete: false,
+            created_user: userId,
+            updated_user: userId,
         });
 
         if (error) {
