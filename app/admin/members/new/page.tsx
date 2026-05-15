@@ -1,5 +1,6 @@
 import Breadcrumbs from "@/app/_components/breadcrumbs";
-import MemberForm from "./member-form";
+import MemberForm from "../member-form";
+import Link from "next/link";
 
 export default function NewMemberPage() {
     return (
@@ -12,6 +13,12 @@ export default function NewMemberPage() {
                 ]}
             />
 
+            <Link
+                href="/admin/members"
+                className="inline-block rounded-full bg-zinc-800 px-4 py-2"
+            >
+                戻る
+            </Link>
             <h1 className="text-3xl font-bold">メンバー追加</h1>
             <MemberForm />
         </main>
