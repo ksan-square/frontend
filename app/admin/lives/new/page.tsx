@@ -1,6 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import LiveForm from "../live-form";
 
+export const dynamic = "force-dynamic";
+
 export default async function NewLivePage() {
     const { data: venues } = await supabase
         .from("venues")
