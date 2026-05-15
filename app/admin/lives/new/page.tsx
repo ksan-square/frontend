@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function NewLivePage() {
     const { data: venues } = await supabase
         .from("venues")
-        .select("id,name")
+        .select("id,name,area")
         .order("name");
 
     return (
