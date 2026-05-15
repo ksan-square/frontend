@@ -75,26 +75,26 @@ export default function SongMarkdownEditor({
         const payload = {
             song_id: songId,
             body_markdown: body,
+            created_user: userId,
             updated_user: userId,
             is_delete: false,
         };
 
         const { data: existingPage } = await supabaseClient
             .from("song_markdown_pages")
-            .select("id")
+            .select("id,created_user")
             .eq("song_id", songId)
-            .eq("is_delete", false)
             .maybeSingle();
 
-        const result = existingPage
-            ? await supabaseClient
-                  .from("song_markdown_pages")
-                  .update(payload)
-                  .eq("id", existingPage.id)
-            : await supabaseClient.from("song_markdown_pages").insert({
-                  ...payload,
-                  created_user: userId,
-              });
+        const result = await supabaseClient.from("song_markdown_pages").upsert(
+            {
+                ...payload,
+                created_user: existingPage?.created_user ?? userId,
+            },
+            {
+                onConflict: "song_id",
+            },
+        );
 
         if (result.error) {
             setMessage(`保存失敗: ${result.error.message}`);
@@ -115,6 +115,10 @@ export default function SongMarkdownEditor({
                     {songTitle} を 1 つの Markdown で管理します。`##`
                     見出しがそのまま index になります。
                 </p>
+                <p className="mt-2 text-xs text-zinc-500">
+                    改行はそのままプレビューに反映されます。複数人は
+                    `[member:日向,茉白]...[/member]` のように書けます。
+                </p>
             </div>
 
             <div className="flex flex-wrap gap-2 rounded-2xl border border-zinc-800 bg-zinc-950 p-3">
@@ -131,6 +135,13 @@ export default function SongMarkdownEditor({
                     className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm font-bold"
                 >
                     B
+                </button>
+                <button
+                    type="button"
+                    onClick={() => insertText("  \n")}
+                    className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm"
+                >
+                    改行
                 </button>
                 <button
                     type="button"
@@ -194,6 +205,10 @@ export default function SongMarkdownEditor({
 
 [member:かな]
 歌詞
+[/member]
+
+[member:日向,茉白]
+ユニゾン
 [/member]
 
 [call]
