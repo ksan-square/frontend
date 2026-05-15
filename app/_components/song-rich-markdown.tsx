@@ -67,23 +67,57 @@ function getSafeColor(value: string) {
     return undefined;
 }
 
+function parseMemberNames(rawValue: string) {
+    return rawValue
+        .split(/[\/,、&＆・]+/)
+        .map((value) => value.trim())
+        .filter(Boolean);
+}
+
+function getMemberLabel(names: string[]) {
+    if (names.length === 0) {
+        return "";
+    }
+
+    if (names.length === 1) {
+        return names[0];
+    }
+
+    return names.join(" / ");
+}
+
 const rules: DecorationRule[] = [
     {
         pattern: /\[member:([^\]]+)\]([\s\S]*?)\[\/member\]/,
         render(match, children, key, membersByName) {
-            const member = membersByName.get(match[1].trim());
+            const memberNames = parseMemberNames(match[1]);
+            const matchedMembers = memberNames
+                .map((name) => membersByName.get(name))
+                .filter((member): member is Member => Boolean(member));
+            const firstMember = matchedMembers[0];
+            const memberLabel = getMemberLabel(
+                matchedMembers.length > 0
+                    ? matchedMembers.map((member) => member.name)
+                    : memberNames,
+            );
 
             return (
                 <span
                     key={key}
-                    className="rounded px-1 py-0.5"
+                    className="inline-flex flex-col items-start whitespace-pre-wrap align-top"
                     style={{
-                        backgroundColor:
-                            member?.member_color_code ?? "rgba(63,63,70,0.5)",
-                        color: member?.lyric_display_color_code ?? "#ffffff",
+                        color:
+                            firstMember?.lyric_display_color_code ??
+                            firstMember?.member_color_code ??
+                            undefined,
                     }}
                 >
-                    {children}
+                    {memberLabel && (
+                        <span className="block leading-none text-[11px] font-semibold opacity-70">
+                            [{memberLabel}]
+                        </span>
+                    )}
+                    <span className="block leading-snug">{children}</span>
                 </span>
             );
         },
@@ -94,12 +128,12 @@ const rules: DecorationRule[] = [
             return (
                 <span
                     key={key}
-                    className="block rounded-xl border border-pink-500/30 bg-pink-500/10 px-4 py-3"
+                    className="flex flex-col items-start whitespace-pre-wrap rounded-xl border border-pink-500/30 bg-pink-500/10 px-3 py-1.5"
                 >
-                    <span className="mb-2 block text-xs font-semibold text-pink-300">
+                    <span className="block leading-none text-[11px] font-semibold text-pink-300">
                         CALL
                     </span>
-                    <span className="block font-bold text-pink-100">
+                    <span className="block leading-snug font-bold text-pink-100">
                         {children}
                     </span>
                 </span>
@@ -209,7 +243,7 @@ export default function SongRichMarkdown({
         },
         p({ children }) {
             return (
-                <p className="mt-4 leading-8 text-zinc-200">
+                <p className="mt-4 whitespace-pre-wrap leading-8 text-zinc-200">
                     {decorateNode(children, "p", membersByName)}
                 </p>
             );
@@ -222,7 +256,7 @@ export default function SongRichMarkdown({
         },
         li({ children }) {
             return (
-                <li className="leading-7">
+                <li className="whitespace-pre-wrap leading-7">
                     {decorateNode(children, "li", membersByName)}
                 </li>
             );

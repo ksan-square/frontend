@@ -174,6 +174,38 @@ export default async function Home() {
           <p className="mt-5 text-zinc-300">
             楽曲ごとのコール、歌割、ライブ履歴、セトリをまとめるためのファンコミュニティサイトです。
           </p>
+
+          {nextLive && (
+            <div className="mt-6 rounded-2xl border border-pink-500/40 bg-zinc-900 p-5">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-pink-300">
+                    次のライブ予定
+                  </p>
+                  <h2 className="text-2xl font-bold">{nextLive.event_name}</h2>
+                  <p className="text-sm text-zinc-200">
+                    {nextLiveVenue?.name ?? "会場未登録"}
+                    {nextLiveVenue?.area && ` / ${nextLiveVenue.area}`}
+                  </p>
+                  <p className="text-sm text-zinc-400">
+                    {nextLive.live_date}
+                    {nextLiveTimeText && ` / ${nextLiveTimeText}`}
+                  </p>
+                  <p className="text-sm text-zinc-400">
+                    特典会: {nextBenefitTimeText}
+                    {nextBenefitPlaceText && ` / ${nextBenefitPlaceText}`}
+                  </p>
+                </div>
+
+                <Link
+                  href={`/lives/${nextLive.id}`}
+                  className="rounded-full bg-pink-500 px-4 py-2 text-sm font-bold text-white"
+                >
+                  詳細を見る
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="grid gap-3 md:grid-cols-3">
@@ -196,39 +228,6 @@ export default async function Home() {
           ))}
         </div>
       </section>
-
-      {nextLive && (
-        <section className="rounded-2xl border border-pink-500/40 bg-zinc-900 p-5">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-pink-300">
-                次回のライブ
-              </p>
-              <h2 className="text-2xl font-bold">{nextLive.event_name}</h2>
-              <p className="text-sm text-zinc-300">
-                {nextLive.live_date}
-                {nextLiveTimeText && ` / ${nextLiveTimeText}`}
-              </p>
-              <p className="text-sm text-zinc-400">
-                {nextLiveVenue?.name ?? "会場未登録"}
-                {nextLiveVenue?.area && ` / ${nextLiveVenue.area}`}
-              </p>
-              <p className="text-sm text-zinc-400">
-                特典会:{" "}
-                {nextBenefitTimeText}
-                {nextBenefitPlaceText && ` / ${nextBenefitPlaceText}`}
-              </p>
-            </div>
-
-            <Link
-              href={`/lives/${nextLive.id}`}
-              className="rounded-full bg-pink-500 px-4 py-2 text-sm font-bold text-white"
-            >
-              詳細を見る
-            </Link>
-          </div>
-        </section>
-      )}
 
       <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-4">
