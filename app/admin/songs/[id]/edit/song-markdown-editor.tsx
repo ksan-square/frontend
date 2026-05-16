@@ -112,7 +112,7 @@ export default function SongMarkdownEditor({
     const headings = extractHeadings(body);
 
     return (
-        <section className="space-y-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+        <section className="space-y-5 rounded-2xl border border-zinc-800 bg-zinc-900 p-4 sm:space-y-6 sm:p-6">
             <div>
                 <h2 className="text-2xl font-bold">歌詞・コール Markdown 編集</h2>
                 <p className="mt-2 text-sm text-zinc-400">
@@ -125,41 +125,41 @@ export default function SongMarkdownEditor({
                 </p>
             </div>
 
-            <div className="sticky top-20 z-20 space-y-4">
-                <div className="rounded-2xl border border-zinc-800 bg-zinc-900/95 p-3 backdrop-blur">
-                    <div className="flex flex-wrap gap-2">
+            <div className="sticky top-16 z-20 max-h-[42vh] space-y-3 overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-900/95 p-3 shadow-xl shadow-zinc-950/40 backdrop-blur sm:top-20 sm:max-h-[48vh] sm:space-y-4">
+                <div>
+                    <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
                         <button
                             type="button"
                             onClick={() => insertText("## ")}
-                            className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm"
+                            className="shrink-0 rounded-full bg-zinc-800 px-3 py-2 text-sm sm:py-1.5"
                         >
                             Index
                         </button>
                         <button
                             type="button"
                             onClick={() => insertText("**", "**")}
-                            className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm font-bold"
+                            className="shrink-0 rounded-full bg-zinc-800 px-3 py-2 text-sm font-bold sm:py-1.5"
                         >
                             B
                         </button>
                         <button
                             type="button"
                             onClick={() => insertText("  \n")}
-                            className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm"
+                            className="shrink-0 rounded-full bg-zinc-800 px-3 py-2 text-sm sm:py-1.5"
                         >
                             改行
                         </button>
                         <button
                             type="button"
                             onClick={() => insertText("[call]\n", "\n[/call]")}
-                            className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm"
+                            className="shrink-0 rounded-full bg-zinc-800 px-3 py-2 text-sm sm:py-1.5"
                         >
                             Call
                         </button>
                         <button
                             type="button"
                             onClick={() => insertText("[color:#ec4899]", "[/color]")}
-                            className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm"
+                            className="shrink-0 rounded-full bg-zinc-800 px-3 py-2 text-sm sm:py-1.5"
                         >
                             Color
                         </button>
@@ -170,7 +170,7 @@ export default function SongMarkdownEditor({
                                 onClick={() =>
                                     insertText(`[member:${member.name}]`, "[/member]")
                                 }
-                                className="rounded-full px-3 py-1.5 text-xs font-semibold"
+                                className="shrink-0 rounded-full px-3 py-2 text-xs font-semibold sm:py-1.5"
                                 style={{
                                     backgroundColor:
                                         member.member_color_code ?? "#3f3f46",
@@ -186,7 +186,7 @@ export default function SongMarkdownEditor({
                             onClick={() =>
                                 insertText("[member:日向,胡桃]", "[/member]")
                             }
-                            className="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-zinc-200"
+                            className="shrink-0 rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-semibold text-zinc-200 sm:py-1.5"
                         >
                             日向,胡桃
                         </button>
@@ -194,11 +194,11 @@ export default function SongMarkdownEditor({
                 </div>
 
                 {headings.length > 0 && (
-                    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/95 p-4 backdrop-blur">
+                    <div className="border-t border-zinc-800 pt-3">
                         <p className="mb-2 text-sm font-semibold text-pink-300">
                             Index Preview
                         </p>
-                        <div className="flex max-h-28 flex-wrap gap-2 overflow-y-auto pr-1">
+                        <div className="flex max-h-24 flex-wrap gap-2 overflow-y-auto pr-1 sm:max-h-28">
                             {headings.map((heading) => (
                                 <span
                                     key={heading}
@@ -212,10 +212,10 @@ export default function SongMarkdownEditor({
                 )}
             </div>
 
-            <div className="grid h-[min(72vh,960px)] gap-0 overflow-hidden rounded-2xl border border-zinc-800 lg:grid-cols-2">
+            <div className="grid min-h-[78vh] scroll-mt-72 gap-0 overflow-hidden rounded-2xl border border-zinc-800 lg:h-[min(72vh,960px)] lg:min-h-0 lg:grid-cols-2">
                 <textarea
                     ref={textareaRef}
-                    className="h-full min-h-0 w-full resize-none overflow-y-auto bg-zinc-950 p-4 font-mono text-sm leading-6 outline-none"
+                    className="h-[68vh] min-h-[520px] w-full resize-y overflow-y-auto bg-zinc-950 p-4 font-mono text-base leading-7 outline-none lg:h-full lg:min-h-0 lg:resize-none lg:text-sm lg:leading-6"
                     value={body}
                     onChange={(e) => setBody(e.target.value)}
                     placeholder="## 1番
@@ -233,7 +233,7 @@ export default function SongMarkdownEditor({
 [/call]"
                 />
 
-                <div className="h-full min-h-0 overflow-y-auto border-t border-zinc-800 p-5 lg:border-l lg:border-t-0">
+                <div className="max-h-[60vh] min-h-[360px] overflow-y-auto border-t border-zinc-800 p-5 lg:h-full lg:max-h-none lg:min-h-0 lg:border-l lg:border-t-0">
                     <p className="mb-3 text-sm font-semibold text-pink-300">
                         Preview
                     </p>

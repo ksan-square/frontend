@@ -202,19 +202,17 @@ export default async function SongDetailPage({ params }: Props) {
                 <h2 className="text-2xl font-bold">歌割・コール</h2>
 
                 {sectionIndex.length > 0 && (
-                    <div className="sticky top-20 z-20">
-                        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/95 p-4 backdrop-blur">
-                            <div className="flex max-h-28 flex-wrap gap-2 overflow-y-auto pr-1">
+                    <div className="sticky top-16 z-20 max-h-[34vh] overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-900/95 p-3 shadow-xl shadow-zinc-950/40 backdrop-blur sm:top-20 sm:max-h-[42vh] sm:p-4">
+                        <div className="flex gap-2 overflow-x-auto pb-1 sm:max-h-28 sm:flex-wrap sm:overflow-y-auto sm:overflow-x-visible sm:pb-0 sm:pr-1">
                                 {sectionIndex.map((item) => (
                                     <a
                                         key={item.id}
                                         href={`#${item.anchorId}`}
-                                        className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm hover:bg-pink-500"
+                                        className="shrink-0 rounded-full bg-zinc-800 px-3 py-2 text-sm hover:bg-pink-500 sm:py-1.5"
                                     >
                                         {item.label}
                                     </a>
                                 ))}
-                            </div>
                         </div>
                     </div>
                 )}
@@ -248,7 +246,7 @@ export default async function SongDetailPage({ params }: Props) {
                             <article
                                 key={part.id}
                                 id={anchorId}
-                                className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5"
+                                className="scroll-mt-52 rounded-2xl border border-zinc-800 bg-zinc-900 p-5 sm:scroll-mt-44"
                             >
                                 <div className="mb-3 flex flex-wrap items-center gap-2">
                                     <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs">
@@ -289,7 +287,7 @@ export default async function SongDetailPage({ params }: Props) {
                                 )}
 
                                 {part.call_text && (
-                                    <div className="mt-4 rounded-xl border border-pink-500/30 bg-pink-500/10 p-4">
+                                    <div className="mt-4 rounded-xl border border-pink-500/30 bg-pink-500/10 px-4 py-3">
                                         <p className="text-xs font-semibold text-pink-300">CALL</p>
                                         <p className="mt-1 font-bold text-pink-100">
                                             {part.call_text}
