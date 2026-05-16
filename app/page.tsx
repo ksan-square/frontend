@@ -64,7 +64,9 @@ export default async function Home() {
       .limit(3),
     supabase
       .from("lives")
-      .select("id,live_date,live_start_time,live_end_time,event_name,venues(name,area)")
+      .select(
+        "id,live_date,live_start_time,live_end_time,event_name,venues(name,area)",
+      )
       .eq("is_delete", false)
       .lt("live_date", today)
       .order("live_date", { ascending: false })
@@ -79,7 +81,9 @@ export default async function Home() {
       .limit(3),
     supabase
       .from("lives")
-      .select("id,live_date,live_start_time,live_end_time,benefit_meeting_start_time,benefit_meeting_end_time,benefit_meeting_time_note,benefit_meeting_place_detail,ticket_url,official_x_url,event_name,venues!lives_venue_id_fkey(name,area),benefit_venue:venues!lives_benefit_venue_id_fkey(name,area)")
+      .select(
+        "id,live_date,live_start_time,live_end_time,benefit_meeting_start_time,benefit_meeting_end_time,benefit_meeting_time_note,benefit_meeting_place_detail,ticket_url,official_x_url,event_name,venues!lives_venue_id_fkey(name,area),benefit_venue:venues!lives_benefit_venue_id_fkey(name,area)",
+      )
       .eq("is_delete", false)
       .gte("live_date", today)
       .order("live_date", { ascending: true })
@@ -88,7 +92,9 @@ export default async function Home() {
       .limit(1),
     supabase
       .from("lives")
-      .select("id,live_date,live_start_time,live_end_time,event_name,venues(name,area)")
+      .select(
+        "id,live_date,live_start_time,live_end_time,event_name,venues(name,area)",
+      )
       .eq("is_delete", false)
       .gte("live_date", today)
       .order("live_date", { ascending: true })
@@ -136,10 +142,12 @@ export default async function Home() {
   const nextBenefitPlaceText = nextLive
     ? nextBenefitVenue?.name
       ? `${nextBenefitVenue.name}${nextBenefitVenue.area ? ` / ${nextBenefitVenue.area}` : ""}${nextLive.benefit_meeting_place_detail ? ` / ${nextLive.benefit_meeting_place_detail}` : ""}`
-      : nextLive.benefit_meeting_place_detail ?? "会場未定"
+      : (nextLive.benefit_meeting_place_detail ?? "会場未定")
     : null;
   const livePreviewLives =
-    latestLives && latestLives.length > 0 ? latestLives : upcomingPreviewLives ?? [];
+    latestLives && latestLives.length > 0
+      ? latestLives
+      : (upcomingPreviewLives ?? []);
   const nextLiveTimeText = nextLive
     ? nextLive.live_start_time
       ? nextLive.live_end_time
@@ -151,10 +159,10 @@ export default async function Home() {
     ? nextLive.benefit_meeting_time_note
       ? nextLive.benefit_meeting_time_note
       : nextLive.benefit_meeting_start_time
-      ? nextLive.benefit_meeting_end_time
-        ? `${formatTime(nextLive.benefit_meeting_start_time)}-${formatTime(nextLive.benefit_meeting_end_time)}`
-        : `${formatTime(nextLive.benefit_meeting_start_time)} 開始`
-      : "未定"
+        ? nextLive.benefit_meeting_end_time
+          ? `${formatTime(nextLive.benefit_meeting_start_time)}-${formatTime(nextLive.benefit_meeting_end_time)}`
+          : `${formatTime(nextLive.benefit_meeting_start_time)} 開始`
+        : "未定"
     : null;
 
   return (
@@ -232,7 +240,7 @@ export default async function Home() {
       <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-2xl font-bold">最近見るもの</h2>
+            <h2 className="text-2xl font-bold">Top Wiki</h2>
             <Link href="/wiki" className="text-sm font-semibold text-pink-300">
               Wiki一覧
             </Link>
@@ -265,11 +273,16 @@ export default async function Home() {
 
           <div className="space-y-3">
             {notices?.length === 0 && (
-              <p className="text-sm text-zinc-400">現在お知らせはありません。</p>
+              <p className="text-sm text-zinc-400">
+                現在お知らせはありません。
+              </p>
             )}
 
             {notices?.map((notice) => (
-              <article key={notice.id} className="border-b border-zinc-800 pb-3 last:border-0 last:pb-0">
+              <article
+                key={notice.id}
+                className="border-b border-zinc-800 pb-3 last:border-0 last:pb-0"
+              >
                 <div className="flex flex-wrap items-center gap-2">
                   {notice.tag && (
                     <span className="rounded-full bg-pink-500/20 px-3 py-1 text-xs text-pink-200">
