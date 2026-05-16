@@ -399,7 +399,7 @@ export default async function AdminLivesPage({
                                     </div>
                                 </div>
 
-                                <div className="flex gap-2">
+                                <div className="flex items-center gap-2">
                                     <Link
                                         href={`/admin/lives/${live.id}/edit`}
                                         className="rounded-full bg-zinc-800 px-4 py-2"
@@ -524,7 +524,7 @@ export default async function AdminLivesPage({
                                         </p>
                                     </div>
 
-                                    <div className="flex gap-2">
+                                    <div className="flex items-center gap-2">
                                         <Link
                                             href={`/admin/lives/${live.id}/edit`}
                                             className="rounded-full bg-zinc-800 px-4 py-2"
