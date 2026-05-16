@@ -45,6 +45,8 @@ export default function SongMarkdownEditor({
 
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
+        const scrollTop = textarea.scrollTop;
+        const scrollLeft = textarea.scrollLeft;
         const selectedText = body.slice(start, end);
         const nextBody =
             body.slice(0, start) +
@@ -61,6 +63,8 @@ export default function SongMarkdownEditor({
                 start + before.length,
                 end + before.length,
             );
+            textarea.scrollTop = scrollTop;
+            textarea.scrollLeft = scrollLeft;
         });
     }
 
