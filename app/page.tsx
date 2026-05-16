@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { getSiteUrl } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "ホーム",
@@ -15,6 +16,17 @@ export const dynamic = "force-dynamic";
 
 function formatTime(time: string | null) {
   return time ? time.slice(0, 5) : null;
+}
+
+function createShareUrl() {
+  const shareText =
+    "こしあんのファンへ！\n\n #こしあんスクエア というサイトができました！\n\n🎤 ライブ予定の確認\n📣 コール表・歌割表の確認\n\nができて、予習や現場でかなり便利です！\n\nこれから機能も増えていくらしいので気になる人はぜひ！\n\n#こしあん\n#宵越しのアンサンブル\n\n";
+  const params = new URLSearchParams({
+    text: shareText,
+    url: getSiteUrl(),
+  });
+
+  return `https://twitter.com/intent/tweet?${params.toString()}`;
 }
 
 export default async function Home() {
@@ -165,6 +177,8 @@ export default async function Home() {
         : "未定"
     : null;
 
+  const shareUrl = createShareUrl();
+
   return (
     <main className="space-y-8">
       <section className="space-y-6 border-b border-zinc-800 pb-8">
@@ -182,6 +196,23 @@ export default async function Home() {
           <p className="mt-5 text-zinc-300">
             楽曲ごとのコール、歌割、ライブ履歴、セトリをまとめるためのファンコミュニティサイトです。
           </p>
+
+          <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5">
+            <p className="text-sm font-semibold text-pink-300">
+              こしあんスクエアを広める
+            </p>
+            <p className="mt-2 text-sm leading-6 text-zinc-300">
+              ぜひこしあんスクエアをXで広めてください。
+            </p>
+            <a
+              href={shareUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex rounded-full bg-pink-500 px-4 py-2 text-sm font-bold text-white hover:bg-pink-400"
+            >
+              Xで広める
+            </a>
+          </div>
 
           {nextLive && (
             <div className="mt-6 rounded-2xl border border-pink-500/40 bg-zinc-900 p-5">
