@@ -18,6 +18,12 @@ function formatTime(time: string | null) {
   return time ? time.slice(0, 5) : null;
 }
 
+type NextLiveCandidate = {
+  live_date: string;
+  live_start_time: string | null;
+  benefit_meeting_end_time: string | null;
+};
+
 function createShareUrl() {
   const shareText =
     "こしあんのファンへ！\n\n #こしあんスクエア というサイトができました！\n\n🎤 ライブ予定の確認\n📣 コール表・歌割表の確認\n\nができて、予習や現場でかなり便利です！\n\nこれから機能も増えていくらしいので気になる人はぜひ！\n\n#こしあん\n#宵越しのアンサンブル\n\n";
@@ -29,13 +35,81 @@ function createShareUrl() {
   return `https://twitter.com/intent/tweet?${params.toString()}`;
 }
 
+function getJapanTimeKey(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  const hour = parts.find((part) => part.type === "hour")?.value ?? "00";
+  const minute = parts.find((part) => part.type === "minute")?.value ?? "00";
+
+  return `${hour === "24" ? "00" : hour}:${minute}`;
+}
+
+function isLiveStillUpcomingToday(
+  live: NextLiveCandidate,
+  sameDayLives: NextLiveCandidate[],
+  liveIndex: number,
+  currentTime: string,
+) {
+  const benefitEndTime = formatTime(live.benefit_meeting_end_time);
+
+  if (benefitEndTime) {
+    return currentTime <= benefitEndTime;
+  }
+
+  const nextLiveStartTime = formatTime(sameDayLives[liveIndex + 1]?.live_start_time);
+
+  if (sameDayLives.length >= 2 && nextLiveStartTime) {
+    return currentTime < nextLiveStartTime;
+  }
+
+  return true;
+}
+
+function findNextLive<T extends NextLiveCandidate>(
+  lives: T[] | null,
+  today: string,
+  currentTime: string,
+) {
+  const candidates = lives ?? [];
+
+  return candidates.find((live, index) => {
+    if (live.live_date > today) {
+      return true;
+    }
+
+    if (live.live_date < today) {
+      return false;
+    }
+
+    const sameDayLives = candidates.filter(
+      (candidate) => candidate.live_date === live.live_date,
+    );
+    const sameDayIndex = sameDayLives.findIndex(
+      (candidate) => candidate === live,
+    );
+
+    return isLiveStillUpcomingToday(
+      live,
+      sameDayLives,
+      sameDayIndex >= 0 ? sameDayIndex : index,
+      currentTime,
+    );
+  });
+}
+
 export default async function Home() {
+  const now = new Date();
   const today = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Tokyo",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(new Date());
+  }).format(now);
+  const currentTime = getJapanTimeKey(now);
 
   const [
     { count: songCount },
@@ -100,8 +174,7 @@ export default async function Home() {
       .gte("live_date", today)
       .order("live_date", { ascending: true })
       .order("live_start_time", { ascending: true })
-      .order("same_day_order", { ascending: true })
-      .limit(1),
+      .order("same_day_order", { ascending: true }),
     supabase
       .from("lives")
       .select(
@@ -140,7 +213,7 @@ export default async function Home() {
     return new Date(date).toLocaleDateString("ja-JP");
   }
 
-  const nextLive = nextLives?.[0];
+  const nextLive = findNextLive(nextLives, today, currentTime);
   const nextLiveVenue = nextLive
     ? Array.isArray(nextLive.venues)
       ? nextLive.venues[0]
@@ -197,23 +270,6 @@ export default async function Home() {
             楽曲ごとのコール、歌割、ライブ履歴、セトリをまとめるためのファンコミュニティサイトです。
           </p>
 
-          <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5">
-            <p className="text-sm font-semibold text-pink-300">
-              こしあんスクエアを広める
-            </p>
-            <p className="mt-2 text-sm leading-6 text-zinc-300">
-              ぜひこしあんスクエアをXで広めてください。
-            </p>
-            <a
-              href={shareUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex rounded-full bg-pink-500 px-4 py-2 text-sm font-bold text-white hover:bg-pink-400"
-            >
-              Xで広める
-            </a>
-          </div>
-
           {nextLive && (
             <div className="mt-6 rounded-2xl border border-pink-500/40 bg-zinc-900 p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
@@ -245,6 +301,23 @@ export default async function Home() {
               </div>
             </div>
           )}
+
+          <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5">
+            <p className="text-sm font-semibold text-pink-300">
+              こしあんスクエアを広める
+            </p>
+            <p className="mt-2 text-sm leading-6 text-zinc-300">
+              ぜひこしあんスクエアをXで広めてください。
+            </p>
+            <a
+              href={shareUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex rounded-full bg-pink-500 px-4 py-2 text-sm font-bold text-white hover:bg-pink-400"
+            >
+              Xで広める
+            </a>
+          </div>
         </div>
 
         <div className="grid gap-3 md:grid-cols-3">
