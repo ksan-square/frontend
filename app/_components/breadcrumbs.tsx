@@ -14,7 +14,7 @@ export default function Breadcrumbs({
         <nav aria-label="パンくず" className="text-sm text-zinc-400">
             <ol className="flex flex-wrap items-center gap-2">
                 <li>
-                    <Link href="/" className="hover:text-fuchsia-300">
+                    <Link href="/" className="hover:text-pink-300">
                         ホーム
                     </Link>
                 </li>
@@ -28,7 +28,7 @@ export default function Breadcrumbs({
                         {item.href ? (
                             <Link
                                 href={item.href}
-                                className="hover:text-fuchsia-300"
+                                className="hover:text-pink-300"
                             >
                                 {item.label}
                             </Link>

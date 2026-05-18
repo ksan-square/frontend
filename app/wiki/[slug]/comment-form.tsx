@@ -42,10 +42,10 @@ export default function CommentForm({ wikiPageId }: { wikiPageId: string }) {
     return (
         <form
             onSubmit={handleSubmit}
-            className="surface-subtle space-y-3 p-5"
+            className="space-y-3 rounded-2xl border border-zinc-800 bg-zinc-900 p-5"
         >
             <input
-                className="w-full rounded-sm bg-black p-3 text-zinc-100 outline-none ring-1 ring-white/10 placeholder:text-zinc-600 focus:ring-violet-400"
+                className="w-full rounded-xl bg-zinc-950 p-3"
                 maxLength={40}
                 placeholder="ニックネーム"
                 value={nickname}
@@ -53,7 +53,7 @@ export default function CommentForm({ wikiPageId }: { wikiPageId: string }) {
             />
 
             <textarea
-                className="min-h-28 w-full rounded-sm bg-black p-3 text-zinc-100 outline-none ring-1 ring-white/10 placeholder:text-zinc-600 focus:ring-violet-400"
+                className="min-h-28 w-full rounded-xl bg-zinc-950 p-3"
                 maxLength={2000}
                 placeholder="コメント"
                 value={body}
@@ -61,7 +61,7 @@ export default function CommentForm({ wikiPageId }: { wikiPageId: string }) {
             />
 
             <div className="flex flex-wrap items-center gap-3">
-                <button className="rounded-md bg-violet-500 px-5 py-3 font-black text-white hover:bg-violet-400">
+                <button className="rounded-full bg-pink-500 px-5 py-3 font-bold">
                     投稿
                 </button>
 

@@ -152,24 +152,23 @@ export default async function SongsPage({
     const songs = (data ?? []) as Song[];
 
     return (
-        <main className="space-y-10">
+        <main className="space-y-8">
             <Breadcrumbs items={[{ label: "曲一覧" }]} />
 
-            <section className="relative overflow-hidden bg-black p-6 shadow-2xl shadow-black/30 ring-1 ring-white/10 md:p-8">
-                <div className="editorial-rule absolute inset-x-0 top-0 h-1" />
-                <p className="inline-flex bg-white px-3 py-1 text-xs font-black uppercase text-black">Songs</p>
-                <h1 className="mt-5 text-4xl font-black text-white md:text-5xl">曲一覧</h1>
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-300 md:text-base">
+            <section>
+                <p className="text-sm font-semibold text-pink-300">Songs</p>
+                <h1 className="mt-2 text-3xl font-bold">曲一覧</h1>
+                <p className="mt-3 text-zinc-400">
                     歌割・コール・作詞作曲情報を確認できます。
                 </p>
             </section>
 
-            <section className="surface-subtle p-4">
+            <section className="space-y-3 rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
                 <div className="flex flex-wrap items-center gap-2">
                     <Link
                         href="/songs"
                         aria-current={!selectedInitial ? "page" : undefined}
-                        className="rounded-sm bg-zinc-900 px-3 py-1.5 text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black aria-current:bg-violet-500 aria-current:font-black aria-current:text-white"
+                        className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm aria-current:bg-pink-500 aria-current:font-bold"
                     >
                         すべて
                     </Link>
@@ -183,10 +182,10 @@ export default async function SongsPage({
                                     ? "page"
                                     : undefined
                             }
-                            className="rounded-sm bg-zinc-900 px-3 py-1.5 text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black aria-current:bg-violet-500 aria-current:font-black aria-current:text-white"
+                            className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm aria-current:bg-pink-500 aria-current:font-bold"
                         >
                             {item.key}
-                            <span className="ml-1 text-xs text-zinc-400 aria-current:text-violet-100">
+                            <span className="ml-1 text-xs text-zinc-300">
                                 {item.count}
                             </span>
                         </Link>
@@ -203,7 +202,7 @@ export default async function SongsPage({
                 {selectedInitial && (
                     <Link
                         href="/songs"
-                        className="rounded-sm bg-zinc-900 px-3 py-1.5 text-zinc-100 ring-1 ring-white/10 hover:bg-white hover:text-black"
+                        className="rounded-full bg-zinc-800 px-3 py-1.5 text-zinc-100"
                     >
                         頭文字選択を解除
                     </Link>
@@ -212,7 +211,7 @@ export default async function SongsPage({
 
             <section className="grid gap-4">
                 {songs.length === 0 && (
-                    <div className="surface p-6 text-zinc-400 ring-1 ring-white/10">
+                    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-400">
                         曲が登録されていません。
                     </div>
                 )}
@@ -221,17 +220,17 @@ export default async function SongsPage({
                     <Link
                         key={song.id}
                         href={`/songs/${song.slug}`}
-                        className="group bg-[#111113] p-5 shadow-xl shadow-black/20 ring-1 ring-white/10 hover:-translate-y-0.5 hover:bg-white"
+                        className="group rounded-2xl border border-zinc-800 bg-zinc-900 p-5 hover:border-pink-400/60"
                     >
-                        <h2 className="text-xl font-black text-white group-hover:text-black">
+                        <h2 className="text-xl font-bold group-hover:text-pink-300">
                             {song.title}
                         </h2>
 
                         {song.description && (
-                            <p className="mt-2 text-sm leading-6 text-zinc-400 group-hover:text-zinc-700">{song.description}</p>
+                            <p className="mt-2 text-sm text-zinc-400">{song.description}</p>
                         )}
 
-                        <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-zinc-500 group-hover:text-zinc-600">
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs text-zinc-400">
                             {song.lyricist && <span>作詞: {song.lyricist}</span>}
                             {song.composer && <span>作曲: {song.composer}</span>}
                             {song.arranger && <span>編曲: {song.arranger}</span>}

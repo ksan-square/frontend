@@ -67,7 +67,7 @@ export default function Pagination({
                     page: Math.max(currentPage - 1, 1),
                 })}
                 aria-disabled={currentPage === 1}
-                className="rounded-sm bg-zinc-900 px-4 py-2 text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black aria-disabled:pointer-events-none aria-disabled:opacity-40"
+                className="rounded-full bg-zinc-800 px-4 py-2 text-sm aria-disabled:pointer-events-none aria-disabled:opacity-40"
             >
                 前へ
             </Link>
@@ -94,7 +94,7 @@ export default function Pagination({
                             aria-current={
                                 page === currentPage ? "page" : undefined
                             }
-                            className="min-w-10 rounded-sm bg-zinc-900 px-3 py-2 text-center text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black aria-current:bg-violet-500 aria-current:font-black aria-current:text-white"
+                            className="min-w-10 rounded-full bg-zinc-800 px-3 py-2 text-center text-sm aria-current:bg-pink-500 aria-current:font-bold"
                         >
                             {page}
                         </Link>
@@ -109,7 +109,7 @@ export default function Pagination({
                     page: Math.min(currentPage + 1, totalPages),
                 })}
                 aria-disabled={currentPage === totalPages}
-                className="rounded-sm bg-zinc-900 px-4 py-2 text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black aria-disabled:pointer-events-none aria-disabled:opacity-40"
+                className="rounded-full bg-zinc-800 px-4 py-2 text-sm aria-disabled:pointer-events-none aria-disabled:opacity-40"
             >
                 次へ
             </Link>
