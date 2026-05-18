@@ -194,18 +194,21 @@ export default async function Home() {
       label: "曲を探す",
       description: "歌割、コール、作詞作曲情報を見る。",
       count: `${songCount ?? 0} 曲`,
+      symbol: "♪",
     },
     {
       href: "/lives",
       label: "ライブを探す",
       description: "日付、会場、イベントごとのセトリを見る。",
       count: `${liveCount ?? 0} 本`,
+      symbol: "LIVE",
     },
     {
       href: "/wiki",
       label: "Wikiを読む",
       description: "現場メモや共有情報を確認する。",
       count: `${wikiCount ?? 0} 件`,
+      symbol: "W",
     },
   ];
 
@@ -253,32 +256,51 @@ export default async function Home() {
   const shareUrl = createShareUrl();
 
   return (
-    <main className="space-y-8">
-      <section className="space-y-6 border-b border-zinc-800 pb-8">
-        <div className="max-w-3xl">
-          <p className="text-sm font-semibold text-pink-300">
-            宵越しのアンサンブル 非公式ファンデータベース
-          </p>
+    <main className="space-y-14 md:space-y-20">
+      <section className="relative overflow-hidden bg-black px-5 py-6 shadow-2xl shadow-black/40 ring-1 ring-white/10 md:px-10 md:py-10">
+        <div className="editorial-rule absolute inset-x-0 top-0 h-1" />
 
-          <h1 className="mt-3 text-3xl font-bold tracking-tight md:text-5xl">
-            コール・歌割・セトリを
-            <br />
-            みんなで見やすく。
-          </h1>
+        <div className="grid gap-5 lg:grid-cols-[0.88fr_1.12fr] lg:items-stretch">
+          <div className="flex flex-col justify-between gap-5">
+            <div>
+              <p className="inline-flex bg-white px-3 py-1 text-xs font-black uppercase text-black">
+              宵越しのアンサンブル 非公式ファンコミュニティ
+            </p>
 
-          <p className="mt-5 text-zinc-300">
-            楽曲ごとのコール、歌割、ライブ履歴、セトリをまとめるためのファンコミュニティサイトです。
-          </p>
+              <h1 className="mt-5 text-3xl font-black leading-tight text-white md:text-5xl">
+                こしあんスクエア
+              </h1>
+
+              <p className="mt-4 max-w-xl text-sm leading-7 text-zinc-300 md:text-base">
+              楽曲ごとのコール、歌割、ライブ履歴、セトリをまとめるためのファンコミュニティサイトです。
+            </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/lives"
+                className="rounded-md bg-violet-500 px-5 py-3 text-sm font-black text-white hover:bg-violet-400"
+              >
+                次のライブを見る
+              </Link>
+              <Link
+                href="/songs"
+                className="rounded-md bg-zinc-900 px-5 py-3 text-sm font-bold text-white ring-1 ring-white/10 hover:bg-white hover:text-black"
+              >
+                曲から予習する
+              </Link>
+            </div>
+          </div>
 
           {nextLive && (
-            <div className="mt-6 rounded-2xl border border-pink-500/40 bg-zinc-900 p-5">
-              <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="surface p-5 ring-1 ring-white/10 md:p-6">
+              <div className="flex h-full flex-col justify-between gap-5">
                 <div className="space-y-2">
-                  <p className="text-sm font-semibold text-pink-300">
+                  <p className="text-xs font-black uppercase text-fuchsia-300">
                     次のライブ予定
                   </p>
-                  <h2 className="text-2xl font-bold">{nextLive.event_name}</h2>
-                  <p className="text-sm text-zinc-200">
+                  <h2 className="text-2xl font-black leading-tight text-white md:text-4xl">{nextLive.event_name}</h2>
+                  <p className="text-sm font-semibold text-zinc-100">
                     {nextLiveVenue?.name ?? "会場未登録"}
                     {nextLiveVenue?.area && ` / ${nextLiveVenue.area}`}
                   </p>
@@ -294,30 +316,30 @@ export default async function Home() {
 
                 <Link
                   href={`/lives/${nextLive.id}`}
-                  className="rounded-full bg-pink-500 px-4 py-2 text-sm font-bold text-white"
+                  className="w-fit rounded-md bg-white px-4 py-2 text-sm font-black text-black hover:bg-zinc-200"
                 >
                   詳細を見る
                 </Link>
               </div>
             </div>
           )}
+        </div>
+      </section>
 
-          <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5">
-            <p className="text-sm font-semibold text-pink-300">
-              こしあんスクエアを広める
-            </p>
-            <p className="mt-2 text-sm leading-6 text-zinc-300">
-              ぜひこしあんスクエアをXで広めてください。
-            </p>
-            <a
-              href={shareUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex rounded-full bg-pink-500 px-4 py-2 text-sm font-bold text-white hover:bg-pink-400"
-            >
-              Xで広める
-            </a>
-          </div>
+      <section className="grid gap-4 lg:grid-cols-[0.78fr_1.22fr]">
+        <div className="surface-subtle p-5">
+          <p className="text-sm font-black text-white">こしあんスクエアを広める</p>
+          <p className="mt-2 text-sm leading-6 text-zinc-400">
+            便利な導線を、現場に行く人へ。
+          </p>
+          <a
+            href={shareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex rounded-md bg-white px-4 py-2 text-sm font-black text-black hover:bg-zinc-200"
+          >
+            Xで広める
+          </a>
         </div>
 
         <div className="grid gap-3 md:grid-cols-3">
@@ -325,15 +347,20 @@ export default async function Home() {
             <Link
               key={action.href}
               href={action.href}
-              className="rounded-lg border border-zinc-800 bg-zinc-900 p-5 hover:border-pink-400"
+              className="group bg-[#111113] p-5 shadow-xl shadow-black/20 ring-1 ring-white/10 hover:-translate-y-0.5 hover:bg-white hover:text-black"
             >
-              <div className="flex items-start justify-between gap-3">
-                <h2 className="text-xl font-bold">{action.label}</h2>
-                <span className="rounded-full bg-zinc-800 px-2.5 py-1 text-xs text-zinc-300">
+              <div className="mb-5 flex items-center justify-between gap-3">
+                <span className="inline-grid h-10 min-w-10 place-items-center rounded-sm bg-zinc-950 px-2 text-xs font-black text-white ring-1 ring-white/10 group-hover:bg-black">
+                  {action.symbol}
+                </span>
+                <span className="text-xs font-black text-fuchsia-300">
                   {action.count}
                 </span>
               </div>
-              <p className="mt-3 text-sm leading-6 text-zinc-400">
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="text-xl font-black text-white group-hover:text-black">{action.label}</h2>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-zinc-400 group-hover:text-zinc-700">
                 {action.description}
               </p>
             </Link>
@@ -341,11 +368,11 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+      <section className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-2xl font-bold">Top Wiki</h2>
-            <Link href="/wiki" className="text-sm font-semibold text-pink-300">
+            <h2 className="text-3xl font-black text-white">Top Wiki</h2>
+            <Link href="/wiki" className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 hover:bg-white hover:text-black">
               Wiki一覧
             </Link>
           </div>
@@ -355,9 +382,9 @@ export default async function Home() {
               <Link
                 key={page.id}
                 href={`/wiki/${page.slug}`}
-                className="rounded-lg border border-zinc-800 bg-zinc-900 p-4 hover:border-pink-400"
+                className="surface-subtle block p-4 hover:-translate-y-0.5 hover:bg-zinc-900"
               >
-                <p className="font-bold">{page.title}</p>
+                <p className="text-lg font-black text-white">{page.title}</p>
                 <p className="mt-1 text-sm text-zinc-400">
                   更新: {formatDate(page.updated_at)}
                 </p>
@@ -365,15 +392,15 @@ export default async function Home() {
             ))}
 
             {latestWikiPages?.length === 0 && (
-              <p className="rounded-lg border border-zinc-800 bg-zinc-900 p-4 text-sm text-zinc-400">
+              <p className="surface-subtle p-4 text-sm text-zinc-400">
                 まだWikiはありません。
               </p>
             )}
           </div>
         </div>
 
-        <aside className="space-y-4 rounded-lg border border-zinc-800 bg-zinc-900 p-5">
-          <h2 className="text-xl font-bold">お知らせ</h2>
+        <aside className="surface space-y-4 p-5 ring-1 ring-white/10">
+          <h2 className="text-2xl font-black text-white">お知らせ</h2>
 
           <div className="space-y-3">
             {notices?.length === 0 && (
@@ -385,15 +412,15 @@ export default async function Home() {
             {notices?.map((notice) => (
               <article
                 key={notice.id}
-                className="border-b border-zinc-800 pb-3 last:border-0 last:pb-0"
+                className="bg-black/30 p-4"
               >
                 <div className="flex flex-wrap items-center gap-2">
                   {notice.tag && (
-                    <span className="rounded-full bg-pink-500/20 px-3 py-1 text-xs text-pink-200">
+                    <span className="rounded-full bg-violet-500/15 px-3 py-1 text-xs font-bold text-fuchsia-200 ring-1 ring-violet-300/20">
                       {notice.tag}
                     </span>
                   )}
-                  <h3 className="font-bold">{notice.title}</h3>
+                  <h3 className="font-black text-white">{notice.title}</h3>
                 </div>
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-300">
                   {notice.body}
@@ -404,11 +431,11 @@ export default async function Home() {
         </aside>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2">
+      <section className="grid gap-6 md:grid-cols-2">
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-2xl font-bold">曲から探す</h2>
-            <Link href="/songs" className="text-sm font-semibold text-pink-300">
+            <h2 className="text-3xl font-black text-white">曲から探す</h2>
+            <Link href="/songs" className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 hover:bg-white hover:text-black">
               曲一覧
             </Link>
           </div>
@@ -418,11 +445,11 @@ export default async function Home() {
               <Link
                 key={song.id}
                 href={`/songs/${song.slug}`}
-                className="block rounded-lg border border-zinc-800 bg-zinc-900 p-4 hover:border-pink-400"
+                className="group block bg-[#111113] p-4 shadow-lg shadow-black/20 ring-1 ring-white/10 hover:-translate-y-0.5 hover:bg-white hover:ring-white"
               >
-                <h3 className="font-bold">{song.title}</h3>
+                <h3 className="text-xl font-black text-white group-hover:text-black">{song.title}</h3>
                 {song.description && (
-                  <p className="mt-1 line-clamp-2 text-sm text-zinc-400">
+                  <p className="mt-1 line-clamp-2 text-sm text-zinc-400 group-hover:text-zinc-700">
                     {song.description}
                   </p>
                 )}
@@ -433,8 +460,8 @@ export default async function Home() {
 
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-2xl font-bold">ライブから探す</h2>
-            <Link href="/lives" className="text-sm font-semibold text-pink-300">
+            <h2 className="text-3xl font-black text-white">ライブから探す</h2>
+            <Link href="/lives" className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/10 hover:bg-white hover:text-black">
               ライブ履歴
             </Link>
           </div>
@@ -451,15 +478,15 @@ export default async function Home() {
                 <Link
                   key={live.id}
                   href={`/lives/${live.id}`}
-                  className="block rounded-lg border border-zinc-800 bg-zinc-900 p-4 hover:border-pink-400"
+                  className="group block bg-[#111113] p-4 shadow-lg shadow-black/20 ring-1 ring-white/10 hover:-translate-y-0.5 hover:bg-white hover:ring-white"
                 >
-                  <p className="text-sm font-semibold text-pink-300">
+                  <p className="text-sm font-bold text-fuchsia-300">
                     {live.live_date}
                     {startTime &&
                       ` / ${endTime ? `${startTime}-${endTime}` : startTime}`}
                   </p>
-                  <h3 className="mt-1 font-bold">{live.event_name}</h3>
-                  <p className="mt-1 text-sm text-zinc-400">
+                  <h3 className="mt-1 text-lg font-black text-white group-hover:text-black">{live.event_name}</h3>
+                  <p className="mt-1 text-sm text-zinc-400 group-hover:text-zinc-700">
                     {venue?.name ?? "会場未登録"}
                     {venue?.area && ` / ${venue.area}`}
                   </p>
