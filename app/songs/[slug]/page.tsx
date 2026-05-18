@@ -175,7 +175,7 @@ export default async function SongDetailPage({ params }: Props) {
               }));
 
     return (
-        <main className="space-y-8">
+        <main className="space-y-10">
             <Breadcrumbs
                 items={[
                     { href: "/songs", label: "曲一覧" },
@@ -183,32 +183,33 @@ export default async function SongDetailPage({ params }: Props) {
                 ]}
             />
 
-            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6">
-                <p className="text-sm font-semibold text-pink-300">Song</p>
-                <h1 className="mt-2 text-3xl font-bold">{song.title}</h1>
+            <section className="relative overflow-hidden bg-black p-6 shadow-2xl shadow-black/30 ring-1 ring-white/10 md:p-8">
+                <div className="editorial-rule absolute inset-x-0 top-0 h-1" />
+                <p className="inline-flex bg-white px-3 py-1 text-xs font-black uppercase text-black">Song</p>
+                <h1 className="mt-5 text-4xl font-black leading-tight text-white md:text-5xl">{song.title}</h1>
 
                 {song.description && (
-                    <p className="mt-4 text-zinc-300">{song.description}</p>
+                    <p className="mt-4 max-w-3xl text-sm leading-7 text-zinc-300 md:text-base">{song.description}</p>
                 )}
 
-                <div className="mt-5 grid gap-2 text-sm text-zinc-400 md:grid-cols-3">
-                    <p>作詞: {song.lyricist ?? "未登録"}</p>
-                    <p>作曲: {song.composer ?? "未登録"}</p>
-                    <p>編曲: {song.arranger ?? "未登録"}</p>
+                <div className="mt-6 grid gap-2 text-sm text-zinc-400 md:grid-cols-3">
+                    <p className="surface-subtle p-3">作詞: {song.lyricist ?? "未登録"}</p>
+                    <p className="surface-subtle p-3">作曲: {song.composer ?? "未登録"}</p>
+                    <p className="surface-subtle p-3">編曲: {song.arranger ?? "未登録"}</p>
                 </div>
             </section>
 
             <section className="space-y-4">
-                <h2 className="text-2xl font-bold">歌割・コール</h2>
+                <h2 className="text-3xl font-black text-white">歌割・コール</h2>
 
                 {sectionIndex.length > 0 && (
-                    <div className="sticky top-16 z-20 max-h-[34vh] overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-900/95 p-3 shadow-xl shadow-zinc-950/40 backdrop-blur sm:top-20 sm:max-h-[42vh] sm:p-4">
+                    <div className="sticky top-16 z-20 max-h-[34vh] overflow-y-auto bg-black/95 p-3 shadow-xl shadow-black/40 ring-1 ring-white/10 backdrop-blur sm:top-20 sm:max-h-[42vh] sm:p-4">
                         <div className="flex gap-2 overflow-x-auto pb-1 sm:max-h-28 sm:flex-wrap sm:overflow-y-auto sm:overflow-x-visible sm:pb-0 sm:pr-1">
                                 {sectionIndex.map((item) => (
                                     <a
                                         key={item.id}
                                         href={`#${item.anchorId}`}
-                                        className="shrink-0 rounded-full bg-zinc-800 px-3 py-2 text-sm hover:bg-pink-500 sm:py-1.5"
+                                        className="shrink-0 rounded-sm bg-zinc-900 px-3 py-2 text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black sm:py-1.5"
                                     >
                                         {item.label}
                                     </a>
@@ -218,14 +219,14 @@ export default async function SongDetailPage({ params }: Props) {
                 )}
 
                 {!useMarkdownPage && songParts.length === 0 && (
-                    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-400">
+                    <div className="surface p-6 text-zinc-400 ring-1 ring-white/10">
                         まだ歌割・コールが登録されていません。
                     </div>
                 )}
 
                 <div className="space-y-3">
                     {useMarkdownPage && (
-                        <article className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+                        <article className="surface p-5 ring-1 ring-white/10 md:p-6">
                             <SongRichMarkdown
                                 markdown={songMarkdownPage?.body_markdown ?? ""}
                                 members={displayMembers}
@@ -246,24 +247,24 @@ export default async function SongDetailPage({ params }: Props) {
                             <article
                                 key={part.id}
                                 id={anchorId}
-                                className="scroll-mt-52 rounded-2xl border border-zinc-800 bg-zinc-900 p-5 sm:scroll-mt-44"
+                                className="scroll-mt-52 bg-[#111113] p-5 shadow-xl shadow-black/20 ring-1 ring-white/10 sm:scroll-mt-44"
                             >
                                 <div className="mb-3 flex flex-wrap items-center gap-2">
-                                    <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs">
+                                    <span className="rounded-sm bg-black px-3 py-1 text-xs font-black text-white ring-1 ring-white/10">
                                         {part.order_no}
                                     </span>
 
-                                    <span className="rounded-full bg-pink-500/20 px-3 py-1 text-xs font-semibold text-pink-200">
+                                    <span className="rounded-sm bg-violet-500/15 px-3 py-1 text-xs font-bold text-fuchsia-200 ring-1 ring-violet-300/20">
                                         {part.section_name ?? part.part_type}
                                     </span>
 
-                                    <span className="rounded-full bg-blue-500/20 px-3 py-1 text-xs font-semibold text-blue-200">
+                                    <span className="rounded-sm bg-zinc-950 px-3 py-1 text-xs font-bold text-zinc-300 ring-1 ring-white/10">
                                         {getVocalLabel(part)}
                                     </span>
                                 </div>
 
                                 {part.lyric_text ? (
-                                    <p className="text-lg leading-relaxed">{part.lyric_text}</p>
+                                    <p className="whitespace-pre-wrap text-lg leading-relaxed text-zinc-100">{part.lyric_text}</p>
                                 ) : (
                                     <p className="text-sm text-zinc-500">歌詞なしパート</p>
                                 )}
@@ -273,7 +274,7 @@ export default async function SongDetailPage({ params }: Props) {
                                         {members.map((member) => (
                                             <span
                                                 key={member.id}
-                                                className="rounded-full px-3 py-1 text-xs font-semibold"
+                                                className="rounded-sm px-3 py-1 text-xs font-bold"
                                                 style={{
                                                     backgroundColor:
                                                         member.member_color_code ?? "#3f3f46",
@@ -287,9 +288,11 @@ export default async function SongDetailPage({ params }: Props) {
                                 )}
 
                                 {part.call_text && (
-                                    <div className="mt-4 rounded-xl border border-pink-500/30 bg-pink-500/10 px-4 py-3">
-                                        <p className="text-xs font-semibold text-pink-300">CALL</p>
-                                        <p className="mt-1 font-bold text-pink-100">
+                                    <div className="mt-3 flex flex-wrap items-baseline gap-2 text-sm">
+                                        <span className="text-[11px] font-black uppercase text-fuchsia-300">
+                                            CALL
+                                        </span>
+                                        <p className="font-semibold leading-7 text-zinc-300">
                                             {part.call_text}
                                         </p>
                                     </div>
