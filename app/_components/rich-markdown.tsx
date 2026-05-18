@@ -139,21 +139,21 @@ function decorateNode(node: React.ReactNode, keyPrefix: string): React.ReactNode
 const components: Components = {
     h1({ children }) {
         return (
-            <h1 className="mt-8 text-3xl font-black text-white">
+            <h1 className="mt-8 text-3xl font-bold">
                 {decorateNode(children, "h1")}
             </h1>
         );
     },
     h2({ children }) {
         return (
-            <h2 className="mt-7 border-l-4 border-violet-500 pl-3 text-2xl font-black text-white">
+            <h2 className="mt-7 text-2xl font-bold">
                 {decorateNode(children, "h2")}
             </h2>
         );
     },
     h3({ children }) {
         return (
-            <h3 className="mt-6 text-xl font-black text-white">
+            <h3 className="mt-6 text-xl font-bold">
                 {decorateNode(children, "h3")}
             </h3>
         );
@@ -169,7 +169,7 @@ const components: Components = {
         return (
             <a
                 href={href}
-                className="font-semibold text-fuchsia-300 hover:underline"
+                className="font-semibold text-pink-300 hover:underline"
                 rel="noopener noreferrer"
                 target={href?.startsWith("http") ? "_blank" : undefined}
             >
@@ -188,21 +188,21 @@ const components: Components = {
     },
     blockquote({ children }) {
         return (
-            <blockquote className="mt-4 border-l-4 border-violet-500 bg-black/35 px-4 py-2 text-zinc-300">
+            <blockquote className="mt-4 border-l-4 border-pink-500 bg-zinc-900 px-4 py-2 text-zinc-300">
                 {children}
             </blockquote>
         );
     },
     code({ children }) {
         return (
-            <code className="rounded-sm bg-black px-1.5 py-0.5 text-sm text-fuchsia-200 ring-1 ring-white/10">
+            <code className="rounded bg-zinc-950 px-1.5 py-0.5 text-sm text-pink-200">
                 {children}
             </code>
         );
     },
     pre({ children }) {
         return (
-            <pre className="mt-4 overflow-x-auto bg-black p-4 text-sm ring-1 ring-white/10">
+            <pre className="mt-4 overflow-x-auto rounded-2xl bg-zinc-950 p-4 text-sm">
                 {children}
             </pre>
         );

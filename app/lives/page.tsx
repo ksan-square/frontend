@@ -252,46 +252,33 @@ export default async function LivesPage({
   }
 
   const lives = (data ?? []) as unknown as Live[];
-  const historyLives = lives.map((live, index) => {
-    const month = getMonthKey(live.live_date);
-    const week = getWeekKey(live.live_date);
-    const previousLive = lives[index - 1];
-    const previousMonth = previousLive ? getMonthKey(previousLive.live_date) : null;
-    const previousWeek = previousLive ? getWeekKey(previousLive.live_date) : null;
-
-    return {
-      live,
-      month,
-      shouldShowMonth: month !== previousMonth,
-      shouldShowWeek: week !== previousWeek,
-    };
-  });
+  let previousMonth: string | null = null;
+  let previousWeek: string | null = null;
 
   return (
-    <main className="space-y-10">
+    <main className="space-y-8">
       <Breadcrumbs items={[{ label: "ライブ" }]} />
 
-      <section className="relative overflow-hidden bg-black p-6 shadow-2xl shadow-black/30 ring-1 ring-white/10 md:p-8">
-        <div className="editorial-rule absolute inset-x-0 top-0 h-1" />
-        <p className="inline-flex bg-white px-3 py-1 text-xs font-black uppercase text-black">Lives</p>
+      <section>
+        <p className="text-sm font-semibold text-pink-300">Lives</p>
 
-        <h1 className="mt-5 text-4xl font-black text-white md:text-5xl">ライブ予定・履歴</h1>
+        <h1 className="mt-2 text-3xl font-bold">ライブ予定・履歴</h1>
 
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-300 md:text-base">
+        <p className="mt-3 text-zinc-400">
           次回のライブ予定の確認と、過去ライブのセトリの確認ができます。
         </p>
       </section>
 
       <section className="space-y-4">
         <div>
-          <h2 className="text-3xl font-black text-white">今後のライブ予定</h2>
+          <h2 className="text-2xl font-bold">今後のライブ予定</h2>
           <p className="mt-2 text-sm text-zinc-400">
             時間や特典会会場は決まり次第更新します。
           </p>
         </div>
 
         {(upcomingLives ?? []).length === 0 && (
-          <div className="surface p-6 text-zinc-400 ring-1 ring-white/10">
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-400">
             現在公開中のライブ予定はありません。
           </div>
         )}
@@ -322,16 +309,16 @@ export default async function LivesPage({
           return (
             <div
               key={live.id}
-              className="surface p-5 ring-1 ring-white/10"
+              className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 hover:border-pink-400/60"
             >
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
-                  <p className="text-sm font-black text-fuchsia-300">
+                  <p className="text-sm font-semibold text-pink-300">
                     {live.live_date}
                     {` / ${liveTimeText}`}
                   </p>
 
-                  <h3 className="mt-1 text-2xl font-black text-white">{live.event_name}</h3>
+                  <h3 className="mt-1 text-xl font-bold">{live.event_name}</h3>
 
                   <p className="mt-2 text-sm text-zinc-400">
                     ライブ会場: {venue?.name ?? "会場未登録"}
@@ -349,7 +336,7 @@ export default async function LivesPage({
                         href={live.ticket_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded-sm bg-violet-500 px-3 py-1 text-xs font-black text-white hover:bg-violet-400"
+                        className="rounded-full bg-pink-500 px-3 py-1 text-xs font-bold text-white"
                       >
                         チケット
                       </a>
@@ -360,7 +347,7 @@ export default async function LivesPage({
                         href={live.official_x_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded-sm bg-zinc-950 px-3 py-1 text-xs font-semibold text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black"
+                        className="rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-200"
                       >
                         公式X
                       </a>
@@ -370,7 +357,7 @@ export default async function LivesPage({
 
                 <Link
                   href={`/lives/${live.id}`}
-                  className="w-fit rounded-sm bg-white px-3 py-1.5 text-xs font-black text-black hover:bg-zinc-200"
+                  className="w-fit rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-300 hover:bg-pink-500 hover:text-white"
                 >
                   詳細を見る
                 </Link>
@@ -380,9 +367,9 @@ export default async function LivesPage({
         })}
       </section>
 
-      <section className="surface-subtle space-y-3 p-4">
+      <section className="space-y-3 rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
         <div>
-          <h2 className="text-3xl font-black text-white">過去ライブ履歴</h2>
+          <h2 className="text-2xl font-bold">過去ライブ履歴</h2>
           <p className="mt-2 text-sm text-zinc-400">
             月ごとのインデックスで探せます。
           </p>
@@ -392,7 +379,7 @@ export default async function LivesPage({
           <Link
             href="/lives"
             aria-current={!selectedMonth ? "page" : undefined}
-            className="rounded-sm bg-zinc-900 px-3 py-1.5 text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black aria-current:bg-violet-500 aria-current:font-black aria-current:text-white"
+            className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm aria-current:bg-pink-500 aria-current:font-bold"
           >
             すべて
           </Link>
@@ -402,7 +389,7 @@ export default async function LivesPage({
               key={month.key}
               href={createLivesHref(month.key)}
               aria-current={selectedMonth === month.key ? "page" : undefined}
-              className="rounded-sm bg-zinc-900 px-3 py-1.5 text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black aria-current:bg-violet-500 aria-current:font-black aria-current:text-white"
+              className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm aria-current:bg-pink-500 aria-current:font-bold"
             >
               {month.label}
               <span className="ml-1 text-xs text-zinc-300">{month.count}</span>
@@ -420,7 +407,7 @@ export default async function LivesPage({
         {selectedMonth && (
           <Link
             href="/lives"
-            className="rounded-sm bg-zinc-900 px-3 py-1.5 text-zinc-100 ring-1 ring-white/10 hover:bg-white hover:text-black"
+            className="rounded-full bg-zinc-800 px-3 py-1.5 text-zinc-100"
           >
             月選択を解除
           </Link>
@@ -429,42 +416,49 @@ export default async function LivesPage({
 
       <section className="space-y-4">
         {lives.length === 0 && (
-          <div className="surface p-6 text-zinc-400 ring-1 ring-white/10">
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-400">
             まだライブ履歴が登録されていません。
           </div>
         )}
 
-        {historyLives.map(({ live, month, shouldShowMonth, shouldShowWeek }) => {
+        {lives.map((live) => {
           const venue = live.venues;
+          const month = getMonthKey(live.live_date);
+          const week = getWeekKey(live.live_date);
+          const shouldShowMonth = month !== previousMonth;
+          const shouldShowWeek = week !== previousWeek;
+
+          previousMonth = month;
+          previousWeek = week;
 
           return (
             <div key={live.id} className="space-y-3">
               {shouldShowMonth && (
-                <h2 className="pt-4 text-3xl font-black text-white">
+                <h2 className="pt-4 text-2xl font-bold">
                   {formatMonthLabel(month)}
                 </h2>
               )}
 
               {shouldShowWeek && (
-                <p className="border-l-4 border-violet-500 pl-3 text-sm font-black text-fuchsia-200">
+                <p className="border-l-4 border-pink-500 pl-3 text-sm font-bold text-pink-200">
                   {formatWeekLabel(live.live_date)}
                 </p>
               )}
 
-              <div className="group bg-[#111113] p-5 shadow-xl shadow-black/20 ring-1 ring-white/10 hover:-translate-y-0.5 hover:bg-white">
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 hover:border-pink-400/60">
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <p className="text-sm font-black text-fuchsia-300 group-hover:text-violet-700">
+                    <p className="text-sm font-semibold text-pink-300">
                       {live.live_date}
                       {live.live_start_time &&
                         ` / ${formatTime(live.live_start_time)}${live.live_end_time ? `-${formatTime(live.live_end_time)}` : ""}`}
                     </p>
 
-                    <h3 className="mt-1 text-xl font-black text-white group-hover:text-black">
+                    <h3 className="mt-1 text-xl font-bold">
                       {live.event_name}
                     </h3>
 
-                    <p className="mt-2 text-sm text-zinc-400 group-hover:text-zinc-700">
+                    <p className="mt-2 text-sm text-zinc-400">
                       {venue?.name ?? "会場未登録"}
                       {venue?.area && ` / ${venue.area}`}
                     </p>
@@ -474,7 +468,7 @@ export default async function LivesPage({
                         href={venue.google_map_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-2 inline-block text-sm font-bold text-fuchsia-300 hover:underline group-hover:text-violet-700"
+                        className="mt-2 inline-block text-sm font-semibold text-pink-300 hover:underline"
                       >
                         Google Mapで見る
                       </a>
@@ -483,7 +477,7 @@ export default async function LivesPage({
 
                   <Link
                     href={`/lives/${live.id}`}
-                    className="w-fit rounded-sm bg-zinc-950 px-3 py-1.5 text-xs font-black text-zinc-200 ring-1 ring-white/10 hover:bg-black group-hover:bg-black group-hover:text-white"
+                    className="w-fit rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-300 hover:bg-pink-500 hover:text-white"
                   >
                     セトリを見る
                   </Link>

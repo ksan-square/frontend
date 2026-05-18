@@ -128,12 +128,12 @@ const rules: DecorationRule[] = [
             return (
                 <span
                     key={key}
-                    className="inline-flex items-baseline gap-2 whitespace-pre-wrap align-baseline"
+                    className="flex flex-col items-start gap-1 whitespace-pre-wrap rounded-xl border border-pink-500/30 bg-pink-500/10 px-3 py-2"
                 >
-                    <span className="shrink-0 text-[11px] font-black text-fuchsia-300">
+                    <span className="block leading-none text-[11px] font-semibold text-pink-300">
                         CALL
                     </span>
-                    <span className="leading-snug font-semibold text-zinc-300">
+                    <span className="block leading-snug font-bold text-pink-100">
                         {children}
                     </span>
                 </span>
@@ -218,7 +218,7 @@ export default function SongRichMarkdown({
     const components: Components = {
         h1({ children }) {
             return (
-                <h1 className="mt-8 text-3xl font-black text-white">
+                <h1 className="mt-8 text-3xl font-bold">
                     {decorateNode(children, "h1", membersByName)}
                 </h1>
             );
@@ -228,7 +228,7 @@ export default function SongRichMarkdown({
             return (
                 <h2
                     id={createAnchorId(plainText)}
-                    className="mt-7 scroll-mt-52 border-l-4 border-violet-500 pl-3 text-2xl font-black text-white sm:scroll-mt-44"
+                    className="mt-7 scroll-mt-52 text-2xl font-bold sm:scroll-mt-44"
                 >
                     {decorateNode(children, "h2", membersByName)}
                 </h2>
@@ -236,7 +236,7 @@ export default function SongRichMarkdown({
         },
         h3({ children }) {
             return (
-                <h3 className="mt-6 text-xl font-black text-white">
+                <h3 className="mt-6 text-xl font-bold">
                     {decorateNode(children, "h3", membersByName)}
                 </h3>
             );
@@ -263,14 +263,14 @@ export default function SongRichMarkdown({
         },
         code({ children }) {
             return (
-                <code className="rounded-sm bg-black px-1.5 py-0.5 text-sm text-fuchsia-200 ring-1 ring-white/10">
+                <code className="rounded bg-zinc-950 px-1.5 py-0.5 text-sm text-pink-200">
                     {children}
                 </code>
             );
         },
         pre({ children }) {
             return (
-                <pre className="mt-4 overflow-x-auto bg-black p-4 text-sm ring-1 ring-white/10">
+                <pre className="mt-4 overflow-x-auto rounded-2xl bg-zinc-950 p-4 text-sm">
                     {children}
                 </pre>
             );
