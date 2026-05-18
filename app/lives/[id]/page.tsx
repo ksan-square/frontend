@@ -177,7 +177,7 @@ export default async function LiveDetailPage({ params }: Props) {
     const items = (setlist ?? []) as SetlistItem[];
 
     return (
-        <main className="space-y-8">
+        <main className="space-y-10">
             <Breadcrumbs
                 items={[
                     { href: "/lives", label: "ライブ" },
@@ -185,21 +185,22 @@ export default async function LiveDetailPage({ params }: Props) {
                 ]}
             />
 
-            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6">
-                <p className="text-sm font-semibold text-pink-300">
+            <section className="relative overflow-hidden bg-black p-6 shadow-2xl shadow-black/30 ring-1 ring-white/10 md:p-8">
+                <div className="editorial-rule absolute inset-x-0 top-0 h-1" />
+                <p className="inline-flex bg-white px-3 py-1 text-xs font-black uppercase text-black">
                     {isUpcoming ? "次回予定" : live.live_date}
                 </p>
 
-                <h1 className="mt-2 text-3xl font-bold">
+                <h1 className="mt-5 text-4xl font-black leading-tight text-white md:text-5xl">
                     {live.event_name}
                 </h1>
 
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
-                    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                    <div className="surface-subtle p-4">
+                        <p className="text-xs font-black uppercase tracking-wide text-fuchsia-300">
                             ライブ予定
                         </p>
-                        <p className="mt-2 text-lg font-bold">
+                        <p className="mt-2 text-lg font-black text-white">
                             {live.live_date}
                         </p>
                         <p className="mt-1 text-sm text-zinc-400">
@@ -211,11 +212,11 @@ export default async function LiveDetailPage({ params }: Props) {
                         </p>
                     </div>
 
-                    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                    <div className="surface-subtle p-4">
+                        <p className="text-xs font-black uppercase tracking-wide text-fuchsia-300">
                             特典会
                         </p>
-                        <p className="mt-2 text-lg font-bold">
+                        <p className="mt-2 text-lg font-black text-white">
                             {benefitTimeText}
                         </p>
                         <p className="mt-1 text-sm text-zinc-300">
@@ -229,7 +230,7 @@ export default async function LiveDetailPage({ params }: Props) {
                         href={venue.google_map_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-2 inline-block text-sm font-semibold text-pink-300 hover:underline"
+                        className="mt-4 inline-block text-sm font-bold text-fuchsia-300 hover:underline"
                     >
                         Google Mapで見る
                     </a>
@@ -241,7 +242,7 @@ export default async function LiveDetailPage({ params }: Props) {
                             href={live.ticket_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="rounded-full bg-pink-500 px-4 py-2 text-sm font-bold text-white"
+                            className="rounded-md bg-violet-500 px-4 py-2 text-sm font-black text-white hover:bg-violet-400"
                         >
                             チケット
                         </a>
@@ -252,7 +253,7 @@ export default async function LiveDetailPage({ params }: Props) {
                             href={live.official_x_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="rounded-full bg-zinc-800 px-4 py-2 text-sm font-bold text-zinc-100"
+                            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-black text-zinc-100 ring-1 ring-white/10 hover:bg-white hover:text-black"
                         >
                             公式X
                         </a>
@@ -268,7 +269,7 @@ export default async function LiveDetailPage({ params }: Props) {
 
             <section className="space-y-4">
                 <div>
-                    <h2 className="text-2xl font-bold">
+                    <h2 className="text-3xl font-black text-white">
                         セトリ
                     </h2>
 
@@ -278,7 +279,7 @@ export default async function LiveDetailPage({ params }: Props) {
                 </div>
 
                 {items.length === 0 && (
-                    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-400">
+                    <div className="surface p-6 text-zinc-400 ring-1 ring-white/10">
                         {isUpcoming
                             ? "セトリはライブ後に追加予定です。"
                             : "まだセトリが登録されていません。"}
@@ -296,10 +297,10 @@ export default async function LiveDetailPage({ params }: Props) {
                         return (
                             <li
                                 key={item.id}
-                                className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5"
+                                className="group bg-[#111113] p-5 shadow-xl shadow-black/20 ring-1 ring-white/10 hover:-translate-y-0.5 hover:bg-white"
                             >
                                 <div className="flex items-center gap-4">
-                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink-500 font-bold text-white">
+                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-violet-500 font-black text-white group-hover:bg-black">
                                         {item.order_no}
                                     </span>
 
@@ -307,18 +308,18 @@ export default async function LiveDetailPage({ params }: Props) {
                                         {visibleSong ? (
                                             <Link
                                                 href={`/songs/${visibleSong.slug}`}
-                                                className="text-lg font-bold hover:text-pink-300"
+                                                className="text-lg font-black text-white group-hover:text-black"
                                             >
                                                 {visibleSong.title}
                                             </Link>
                                         ) : (
-                                            <p className="text-lg font-bold">
+                                            <p className="text-lg font-black text-white group-hover:text-black">
                                                 不明な曲
                                             </p>
                                         )}
 
                                         {item.note && (
-                                            <p className="mt-1 text-sm text-zinc-400">
+                                            <p className="mt-1 text-sm text-zinc-400 group-hover:text-zinc-700">
                                                 {item.note}
                                             </p>
                                         )}
