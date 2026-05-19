@@ -54,7 +54,7 @@ export default function RootLayout({
               </span>
             </Link>
 
-            <nav className="flex items-center gap-1 bg-zinc-900 p-1 text-sm text-zinc-300">
+            <nav className="hidden items-center gap-1 bg-zinc-900 p-1 text-sm text-zinc-300 md:flex">
               <Link href="/songs" className="rounded-sm px-3 py-1.5 hover:bg-white hover:text-black">
                 曲
               </Link>
@@ -64,10 +64,38 @@ export default function RootLayout({
               <Link href="/wiki" className="rounded-sm px-3 py-1.5 hover:bg-white hover:text-black">
                 Wiki
               </Link>
-              <Link href="/admin" className="hidden rounded-sm px-3 py-1.5 hover:bg-white hover:text-black sm:inline">
+              <Link href="/admin" className="rounded-sm px-3 py-1.5 hover:bg-white hover:text-black">
                 管理画面
               </Link>
             </nav>
+
+            <details className="group relative md:hidden">
+              <summary
+                aria-label="メニューを開く"
+                className="grid size-10 cursor-pointer list-none place-items-center bg-zinc-900 ring-1 ring-white/10 marker:hidden"
+              >
+                <span className="flex flex-col gap-1.5">
+                  <span className="block h-0.5 w-5 bg-white" />
+                  <span className="block h-0.5 w-5 bg-white" />
+                  <span className="block h-0.5 w-5 bg-white" />
+                </span>
+              </summary>
+
+              <nav className="absolute right-0 top-12 z-50 grid min-w-44 gap-1 bg-black p-2 text-sm text-zinc-200 shadow-2xl shadow-black/50 ring-1 ring-white/10">
+                <Link href="/songs" className="px-4 py-3 hover:bg-white hover:text-black">
+                  曲
+                </Link>
+                <Link href="/lives" className="px-4 py-3 hover:bg-white hover:text-black">
+                  ライブ
+                </Link>
+                <Link href="/wiki" className="px-4 py-3 hover:bg-white hover:text-black">
+                  Wiki
+                </Link>
+                <Link href="/admin" className="px-4 py-3 hover:bg-white hover:text-black">
+                  管理画面
+                </Link>
+              </nav>
+            </details>
           </div>
         </header>
 
