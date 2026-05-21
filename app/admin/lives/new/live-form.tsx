@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { getCurrentUserId } from "@/lib/current-user";
-import { supabaseClient } from "@/lib/supabase-client";
 import { useRouter } from "next/navigation";
+import { createLive } from "@/lib/admin-api";
 
 type Venue = {
     id: string;
@@ -31,11 +30,8 @@ export default function LiveForm({ venues }: { venues: Venue[] }) {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        const userId = await getCurrentUserId();
-
-        const { data, error } = await supabaseClient
-            .from("lives")
-            .insert({
+        try {
+            const data = await createLive({
                 live_date: liveDate,
                 same_day_order: sameDayOrder,
                 live_start_time: liveStartTime || null,
@@ -50,25 +46,19 @@ export default function LiveForm({ venues }: { venues: Venue[] }) {
                 venue_id: venueId || null,
                 benefit_venue_id: benefitVenueId || null,
                 memo: memo || null,
-                is_delete: false,
-                created_user: userId,
-                updated_user: userId,
             })
-            .select("id")
-            .single();
-
-        if (error) {
-            alert(`登録失敗: ${error.message}`);
-            setMessage(`登録失敗: ${error.message}`);
+            alert("ライブを登録しました。");
+            setMessage("ライブを登録した。");
+            setEventName("");
+            setMemo("");
+            router.refresh();
+            router.push(`/admin/lives/${data.id}/edit`);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "登録失敗";
+            alert(`登録失敗: ${message}`);
+            setMessage(`登録失敗: ${message}`);
             return;
         }
-
-        alert("ライブを登録しました。");
-        setMessage("ライブを登録した。");
-        setEventName("");
-        setMemo("");
-        router.refresh();
-        router.push(`/admin/lives/${data.id}/edit`);
     }
 
     return (

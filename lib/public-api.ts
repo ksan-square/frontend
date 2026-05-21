@@ -1,6 +1,6 @@
 type QueryValue = string | number | null | undefined;
 
-function getApiBaseUrl() {
+export function getApiBaseUrl() {
     return (
         process.env.FASTAPI_BASE_URL ??
         process.env.NEXT_PUBLIC_FASTAPI_BASE_URL ??

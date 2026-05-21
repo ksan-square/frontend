@@ -1,8 +1,8 @@
-import { supabase } from "@/lib/supabase";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import SongEditForm from "./song-edit-form";
 import SongMarkdownEditor from "./song-markdown-editor";
 import Link from "next/link";
+import { getAdminSongDetail } from "@/lib/admin-server-api";
 
 export const dynamic = "force-dynamic";
 
@@ -12,30 +12,19 @@ type Props = {
 
 export default async function EditSongPage({ params }: Props) {
     const { id } = await params;
+    let payload;
+    try {
+        payload = await getAdminSongDetail(id);
+    } catch {
+        payload = null;
+    }
 
-    const { data: song, error } = await supabase
-        .from("songs")
-        .select("id,title,slug,order_no,description,release_date,lyricist,composer,arranger")
-        .eq("id", id)
-        .eq("is_delete", false)
-        .single();
-
-    const { data: members } = await supabase
-        .from("members")
-        .select("id,name,member_color_code,lyric_display_color_code,is_delete")
-        .eq("is_delete", false)
-        .order("sort_order", { ascending: true });
-
-    const { data: markdownPage } = await supabase
-        .from("song_markdown_pages")
-        .select("id,body_markdown")
-        .eq("song_id", id)
-        .eq("is_delete", false)
-        .maybeSingle();
-
-    if (error || !song) {
+    if (!payload?.found || !payload.song) {
         return <main>曲が見つからなかった。</main>;
     }
+    const song = payload.song;
+    const members = payload.members;
+    const markdownPage = payload.markdown_page;
 
     return (
         <main className="space-y-6">
@@ -55,7 +44,7 @@ export default async function EditSongPage({ params }: Props) {
             <SongMarkdownEditor
                 songId={song.id}
                 songTitle={song.title}
-                members={(members ?? []) as any}
+                members={members}
                 initialMarkdown={markdownPage?.body_markdown ?? ""}
             />
         </main>

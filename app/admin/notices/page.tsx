@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
-import { supabase } from "@/lib/supabase";
+import { getAdminNotices } from "@/lib/admin-server-api";
 
 export const dynamic = "force-dynamic";
 
@@ -9,15 +9,8 @@ function formatDate(date: string) {
 }
 
 export default async function AdminNoticesPage() {
-    const { data: notices, error } = await supabase
-        .from("notices")
-        .select("id,title,tag,is_published,published_at")
-        .eq("is_delete", false)
-        .order("published_at", { ascending: false });
-
-    if (error) {
-        return <main>お知らせの取得に失敗しました: {error.message}</main>;
-    }
+    const payload = await getAdminNotices();
+    const notices = payload.items;
 
     return (
         <main className="space-y-6">
@@ -39,13 +32,13 @@ export default async function AdminNoticesPage() {
             </div>
 
             <div className="space-y-3">
-                {notices?.length === 0 && (
+                {notices.length === 0 && (
                     <p className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 text-zinc-400">
                         お知らせはまだありません。
                     </p>
                 )}
 
-                {notices?.map((notice) => (
+                {notices.map((notice) => (
                     <Link
                         key={notice.id}
                         href={`/admin/notices/${notice.id}/edit`}

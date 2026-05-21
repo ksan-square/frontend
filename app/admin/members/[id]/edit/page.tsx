@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
-import { supabase } from "@/lib/supabase";
 import MemberForm from "../../member-form";
+import { getAdminMemberDetail } from "@/lib/admin-server-api";
 
 export const dynamic = "force-dynamic";
 
@@ -11,19 +11,11 @@ type Props = {
 
 export default async function EditMemberPage({ params }: Props) {
     const { id } = await params;
-
-    const { data: member, error } = await supabase
-        .from("members")
-        .select(
-            "id,name,member_color_name,member_color_code,lyric_display_color_code,profile,sort_order,is_active",
-        )
-        .eq("id", id)
-        .eq("is_delete", false)
-        .single();
-
-    if (error || !member) {
+    const payload = await getAdminMemberDetail(id);
+    if (!payload.found || !payload.member) {
         return <main>メンバーが見つかりませんでした。</main>;
     }
+    const member = payload.member;
 
     return (
         <main className="space-y-6">

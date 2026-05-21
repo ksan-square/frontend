@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { supabaseClient } from "@/lib/supabase-client";
+import { deleteVenue } from "@/lib/admin-api";
 
 export default function DeleteButton({
     id,
@@ -19,13 +19,10 @@ export default function DeleteButton({
             return;
         }
 
-        const { error } = await supabaseClient
-            .from("venues")
-            .delete()
-            .eq("id", id);
-
-        if (error) {
-            alert(error.message);
+        try {
+            await deleteVenue(id);
+        } catch (error) {
+            alert(error instanceof Error ? error.message : "削除失敗");
             return;
         }
 

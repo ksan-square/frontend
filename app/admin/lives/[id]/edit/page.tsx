@@ -1,8 +1,8 @@
-import { supabase } from "@/lib/supabase";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import LiveForm from "../../live-form";
 import SetlistEditor from "../../setlist-editor";
 import Link from "next/link";
+import { getAdminLiveDetail } from "@/lib/admin-server-api";
 
 export const dynamic = "force-dynamic";
 
@@ -10,32 +10,54 @@ type Props = {
     params: Promise<{ id: string }>;
 };
 
+type SetlistItem = {
+    id: string;
+    order_no: number;
+    note: string | null;
+    songs: {
+        id: string;
+        title: string;
+    } | null;
+};
+
 export default async function EditPage({
     params,
 }: Props) {
     const { id } = await params;
+    let payload;
+    try {
+        payload = await getAdminLiveDetail(id);
+    } catch {
+        payload = null;
+    }
 
-    const { data: live } = await supabase
-        .from("lives")
-        .select("*")
-        .eq("id", id)
-        .eq("is_delete", false)
-        .single();
-
-    const { data: venues } = await supabase
-        .from("venues")
-        .select("id,name")
-        .order("name");
-
-    const { data: songs } = await supabase
-        .from("songs")
-        .select("id,title")
-        .eq("is_delete", false)
-        .order("order_no", { ascending: true });
-
-    if (!live) {
+    if (!payload?.found || !payload.live) {
         return <main>Not found</main>;
     }
+    const live = {
+        ...payload.live,
+        venue_id: payload.live.venue?.id ?? "",
+        benefit_venue_id: payload.live.benefit_venue?.id ?? "",
+    };
+    const venues = payload.venues.map((venue) => ({
+        id: venue.id,
+        name: venue.name,
+    }));
+    const songs = payload.songs.map((song) => ({
+        id: song.id,
+        title: song.title,
+    }));
+    const setlistItems = payload.setlist_items.map((item) => ({
+        id: item.id,
+        order_no: item.order_no,
+        note: item.note,
+        songs: item.song
+            ? {
+                  id: "",
+                  title: item.song.title,
+              }
+            : null,
+    }));
 
     return (
         <main className="space-y-8">
@@ -61,7 +83,8 @@ export default async function EditPage({
 
             <SetlistEditor
                 liveId={id}
-                songs={songs ?? []}
+                songs={songs}
+                initialItems={setlistItems as SetlistItem[]}
             />
         </main>
     );

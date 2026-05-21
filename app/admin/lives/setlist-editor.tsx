@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getCurrentUserId } from "@/lib/current-user";
+import { useCallback, useState } from "react";
 import { supabaseClient } from "@/lib/supabase-client";
 import SortableSetlist from "./sortable-setlist";
+import { addSetlistItem, deleteSetlistItem } from "@/lib/admin-api";
 
 type Song = {
     id: string;
@@ -23,16 +23,18 @@ type SetlistItem = {
 export default function SetlistEditor({
     liveId,
     songs,
+    initialItems,
 }: {
     liveId: string;
     songs: Song[];
+    initialItems: SetlistItem[];
 }) {
-    const [items, setItems] = useState<SetlistItem[]>([]);
+    const [items, setItems] = useState<SetlistItem[]>(initialItems);
     const [songId, setSongId] = useState("");
     const [note, setNote] = useState("");
     const [message, setMessage] = useState("");
 
-    async function fetchSetlist() {
+    const fetchSetlist = useCallback(async () => {
         const { data } = await supabaseClient
             .from("setlist_items")
             .select(`
@@ -50,37 +52,20 @@ export default function SetlistEditor({
             .order("order_no");
 
         setItems((data ?? []) as unknown as SetlistItem[]);
-    }
-
-    useEffect(() => {
-        fetchSetlist();
-    }, []);
+    }, [liveId]);
 
     async function handleAdd() {
         if (!songId) {
             return;
         }
 
-        const userId = await getCurrentUserId();
-        const nextOrder =
-            items.length > 0
-                ? Math.max(...items.map((v) => v.order_no)) + 1
-                : 1;
-
-        const { error } = await supabaseClient
-            .from("setlist_items")
-            .insert({
-                live_id: liveId,
+        try {
+            await addSetlistItem(liveId, {
                 song_id: songId,
-                order_no: nextOrder,
                 note: note || null,
-                is_delete: false,
-                created_user: userId,
-                updated_user: userId,
             });
-
-        if (error) {
-            setMessage(error.message);
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : "追加失敗");
             return;
         }
 
@@ -91,18 +76,10 @@ export default function SetlistEditor({
     }
 
     async function handleDelete(id: string) {
-        const userId = await getCurrentUserId();
-        const { error } = await supabaseClient
-            .from("setlist_items")
-            .update({
-                is_delete: true,
-                updated_user: userId,
-            })
-            .eq("id", id)
-            .eq("is_delete", false);
-
-        if (error) {
-            setMessage(error.message);
+        try {
+            await deleteSetlistItem(id);
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : "削除失敗");
             return;
         }
 
@@ -163,9 +140,11 @@ export default function SetlistEditor({
             </div>
 
             <SortableSetlist
+                key={items.map((item) => item.id).join(",")}
                 items={items}
                 onDelete={handleDelete}
                 onError={setMessage}
+                liveId={liveId}
             />
         </section>
     );

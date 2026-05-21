@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { getCurrentUserId } from "@/lib/current-user";
 import { useRouter } from "next/navigation";
+import { createSong } from "@/lib/admin-api";
 
 export default function SongForm() {
     const router = useRouter();
@@ -19,11 +18,8 @@ export default function SongForm() {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        const userId = await getCurrentUserId();
-
-        const { data, error } = await supabase
-            .from("songs")
-            .insert({
+        try {
+            const data = await createSong({
                 title,
                 slug,
                 order_no: orderNo,
@@ -32,22 +28,16 @@ export default function SongForm() {
                 lyricist: lyricist || null,
                 composer: composer || null,
                 arranger: arranger || null,
-                is_delete: false,
-                created_user: userId,
-                updated_user: userId,
-            })
-            .select("id")
-            .single();
-
-        if (error || !data) {
-            alert(`登録失敗: ${error.message}`);
-            setMessage(`登録失敗: ${error.message}`);
+            });
+            alert("曲を登録しました。");
+            router.refresh();
+            router.push(`/admin/songs/${data.id}/edit`);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "登録失敗";
+            alert(`登録失敗: ${message}`);
+            setMessage(`登録失敗: ${message}`);
             return;
         }
-
-        alert("曲を登録しました。");
-        router.refresh();
-        router.push(`/admin/songs/${data.id}/edit`);
     }
 
     return (

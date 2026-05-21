@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabaseClient } from "@/lib/supabase-client";
+import { createVenue, updateVenue } from "@/lib/admin-api";
 
 type VenueData = {
     id?: string;
@@ -51,19 +51,14 @@ export default function VenueForm({
                 googleMapUrl || null,
         };
 
-        const query = initialData?.id
-            ? supabaseClient
-                .from("venues")
-                .update(payload)
-                .eq("id", initialData.id)
-            : supabaseClient
-                .from("venues")
-                .insert(payload);
-
-        const { error } = await query;
-
-        if (error) {
-            setMessage(error.message);
+        try {
+            if (initialData?.id) {
+                await updateVenue(initialData.id, payload);
+            } else {
+                await createVenue(payload);
+            }
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : "保存失敗");
             return;
         }
 

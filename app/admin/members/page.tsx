@@ -1,17 +1,12 @@
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
-import { supabase } from "@/lib/supabase";
+import { getAdminMembers } from "@/lib/admin-server-api";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminMembersPage() {
-    const { data: members } = await supabase
-        .from("members")
-        .select(
-            "id,name,member_color_name,member_color_code,lyric_display_color_code,is_active,sort_order",
-        )
-        .eq("is_delete", false)
-        .order("sort_order");
+    const payload = await getAdminMembers();
+    const members = payload.items;
 
     return (
         <main className="space-y-6">
@@ -30,7 +25,7 @@ export default async function AdminMembersPage() {
             </div>
 
             <div className="space-y-3">
-                {members?.map((member) => (
+                {members.map((member) => (
                     <Link
                         key={member.id}
                         href={`/admin/members/${member.id}/edit`}

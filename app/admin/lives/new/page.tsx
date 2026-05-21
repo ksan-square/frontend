@@ -1,15 +1,13 @@
-import { supabase } from "@/lib/supabase";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import LiveForm from "./live-form";
 import Link from "next/link";
+import { getAdminVenues } from "@/lib/admin-server-api";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewLivePage() {
-    const { data: venues } = await supabase
-        .from("venues")
-        .select("id,name,area")
-        .order("name");
+    const payload = await getAdminVenues();
+    const venues = payload.items;
 
     return (
         <main className="space-y-6">
@@ -29,7 +27,7 @@ export default async function NewLivePage() {
             </h1>
 
             <LiveForm
-                venues={venues ?? []}
+                venues={venues}
             />
         </main>
     );

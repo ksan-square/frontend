@@ -1,30 +1,13 @@
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
-import { supabase } from "@/lib/supabase";
 import DeleteButton from "./delete-button";
+import { getAdminVenues } from "@/lib/admin-server-api";
 
 export const dynamic = "force-dynamic";
 
 export default async function VenuesPage() {
-    const { data: venues, error } = await supabase
-        .from("venues")
-        .select(`
-            id,
-            name,
-            area,
-            address,
-            google_map_url
-        `)
-        .order("area")
-        .order("name");
-
-    if (error) {
-        return (
-            <main>
-                会場取得失敗: {error.message}
-            </main>
-        );
-    }
+    const payload = await getAdminVenues();
+    const venues = payload.items;
 
     return (
         <main className="space-y-6">
@@ -55,7 +38,7 @@ export default async function VenuesPage() {
             </div>
 
             <section className="space-y-3">
-                {venues?.map((venue) => (
+                {venues.map((venue) => (
                     <div
                         key={venue.id}
                         className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5"

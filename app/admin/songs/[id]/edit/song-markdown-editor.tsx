@@ -2,9 +2,8 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentUserId } from "@/lib/current-user";
-import { supabaseClient } from "@/lib/supabase-client";
 import SongRichMarkdown from "@/app/_components/song-rich-markdown";
+import { saveSongMarkdown } from "@/lib/admin-api";
 
 type Member = {
     id: string;
@@ -69,39 +68,11 @@ export default function SongMarkdownEditor({
     }
 
     async function handleSave() {
-        const userId = await getCurrentUserId();
-
-        if (!userId) {
-            setMessage("ログインが必要です。");
-            return;
-        }
-
-        const payload = {
-            song_id: songId,
-            body_markdown: body,
-            created_user: userId,
-            updated_user: userId,
-            is_delete: false,
-        };
-
-        const { data: existingPage } = await supabaseClient
-            .from("song_markdown_pages")
-            .select("id,created_user")
-            .eq("song_id", songId)
-            .maybeSingle();
-
-        const result = await supabaseClient.from("song_markdown_pages").upsert(
-            {
-                ...payload,
-                created_user: existingPage?.created_user ?? userId,
-            },
-            {
-                onConflict: "song_id",
-            },
-        );
-
-        if (result.error) {
-            setMessage(`保存失敗: ${result.error.message}`);
+        try {
+            await saveSongMarkdown(songId, body);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "保存失敗";
+            setMessage(`保存失敗: ${message}`);
             return;
         }
 

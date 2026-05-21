@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import Pagination from "@/app/_components/pagination";
-import { supabase } from "@/lib/supabase";
+import { getAdminSongs } from "@/lib/admin-server-api";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -13,16 +13,6 @@ type SearchParams = Promise<{
     initial?: string | string[];
     page?: string | string[];
 }>;
-
-type SongIndexItem = {
-    key: string;
-    count: number;
-};
-
-type SongIndexRow = {
-    id: string;
-    title: string | null;
-};
 
 function firstParam(value: string | string[] | undefined) {
     return Array.isArray(value) ? value[0] : value;
@@ -48,32 +38,6 @@ function parseInitial(value: string | string[] | undefined) {
     return Array.from(initial)[0] ?? null;
 }
 
-function getInitial(title: string | null) {
-    const normalizedTitle = title?.trim();
-
-    if (!normalizedTitle) {
-        return "#";
-    }
-
-    return Array.from(normalizedTitle)[0].toUpperCase();
-}
-
-function buildSongIndex(songs: SongIndexRow[]) {
-    const counts = new Map<string, number>();
-
-    for (const song of songs) {
-        const initial = getInitial(song.title);
-        counts.set(initial, (counts.get(initial) ?? 0) + 1);
-    }
-
-    return Array.from(counts.entries()).map<SongIndexItem>(
-        ([key, count]) => ({
-            key,
-            count,
-        }),
-    );
-}
-
 function createSongsHref(initial?: string | null) {
     return initial
         ? `/admin/songs?initial=${encodeURIComponent(initial)}`
@@ -89,54 +53,32 @@ export default async function AdminSongsPage({
     const requestedInitial = parseInitial(params.initial);
     const requestedPage = parsePage(params.page);
 
-    const { data: songIndexRows, error: songIndexError } = await supabase
-        .from("songs")
-        .select("id,title")
-        .eq("is_delete", false)
-        .order("order_no", { ascending: true });
-
-    if (songIndexError) {
-        return <main>取得失敗: {songIndexError.message}</main>;
+    let payload;
+    try {
+        payload = await getAdminSongs({
+            initial: requestedInitial,
+            page: requestedPage,
+        });
+    } catch (error) {
+        return (
+            <main>
+                取得失敗: {error instanceof Error ? error.message : "unknown error"}
+            </main>
+        );
     }
 
-    const songIndex = buildSongIndex(songIndexRows ?? []);
+    const songIndex = payload.index;
+    const songs = payload.items;
+    const totalSongs = payload.pagination.total_items;
+    const totalPages = payload.pagination.total_pages;
+    const currentPage = payload.pagination.page;
+    const rangeStart = (currentPage - 1) * PAGE_SIZE;
+    const rangeEnd = rangeStart + PAGE_SIZE - 1;
     const selectedInitial =
         requestedInitial &&
         songIndex.some((item) => item.key === requestedInitial)
             ? requestedInitial
             : null;
-    const selectedSongIds = selectedInitial
-        ? (songIndexRows ?? [])
-              .filter((song) => getInitial(song.title) === selectedInitial)
-              .map((song) => song.id)
-        : null;
-    const totalSongs = selectedSongIds?.length ?? songIndexRows?.length ?? 0;
-    const totalPages = Math.max(Math.ceil(totalSongs / PAGE_SIZE), 1);
-    const currentPage = Math.min(requestedPage, totalPages);
-    const rangeStart = (currentPage - 1) * PAGE_SIZE;
-    const rangeEnd = rangeStart + PAGE_SIZE - 1;
-    const pageSongIds = selectedSongIds?.slice(rangeStart, rangeEnd + 1);
-
-    let songsQuery = supabase
-        .from("songs")
-        .select("id,title,slug,order_no,lyricist,composer,arranger")
-        .eq("is_delete", false)
-        .order("order_no", { ascending: true });
-
-    if (pageSongIds) {
-        songsQuery =
-            pageSongIds.length > 0
-                ? songsQuery.in("id", pageSongIds)
-                : songsQuery.eq("id", "__no_song__");
-    } else {
-        songsQuery = songsQuery.range(rangeStart, rangeEnd);
-    }
-
-    const { data: songs, error } = await songsQuery;
-
-    if (error) {
-        return <main>取得失敗: {error.message}</main>;
-    }
 
     return (
         <main className="space-y-6">
@@ -205,13 +147,13 @@ export default async function AdminSongsPage({
             </div>
 
             <section className="space-y-3">
-                {songs?.length === 0 && (
+                {songs.length === 0 && (
                     <p className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 text-zinc-400">
                         曲が登録されていません。
                     </p>
                 )}
 
-                {songs?.map((song) => (
+                {songs.map((song) => (
                     <Link
                         key={song.id}
                         href={`/admin/songs/${song.id}/edit`}

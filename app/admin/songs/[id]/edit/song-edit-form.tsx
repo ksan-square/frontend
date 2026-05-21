@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { getCurrentUserId } from "@/lib/current-user";
 import { useRouter } from "next/navigation";
+import { deleteSong, updateSong } from "@/lib/admin-api";
 
 type Song = {
     id: string;
@@ -32,11 +31,8 @@ export default function SongEditForm({ song }: { song: Song }) {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        const userId = await getCurrentUserId();
-
-        const { error } = await supabase
-            .from("songs")
-            .update({
+        try {
+            await updateSong(song.id, {
                 title,
                 slug,
                 order_no: orderNo,
@@ -45,20 +41,16 @@ export default function SongEditForm({ song }: { song: Song }) {
                 lyricist: lyricist || null,
                 composer: composer || null,
                 arranger: arranger || null,
-                updated_user: userId,
             })
-            .eq("id", song.id)
-            .eq("is_delete", false);
-
-        if (error) {
-            alert(`更新失敗: ${error.message}`);
-            setMessage(`更新失敗: ${error.message}`);
+            alert("更新しました。");
+            setMessage("更新しました。");
+            router.refresh();
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "更新失敗";
+            alert(`更新失敗: ${message}`);
+            setMessage(`更新失敗: ${message}`);
             return;
         }
-
-        alert("更新しました。");
-        setMessage("更新しました。");
-        router.refresh();
     }
 
     async function handleDelete() {
@@ -67,17 +59,11 @@ export default function SongEditForm({ song }: { song: Song }) {
             return;
         }
 
-        const userId = await getCurrentUserId();
-        const { error } = await supabase
-            .from("songs")
-            .update({
-                is_delete: true,
-                updated_user: userId,
-            })
-            .eq("id", song.id)
-            .eq("is_delete", false);
-        if (error) {
-            alert(`削除失敗: ${error.message}`);
+        try {
+            await deleteSong(song.id);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "削除失敗";
+            alert(`削除失敗: ${message}`);
             return;
         }
 

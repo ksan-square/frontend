@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import {
     DndContext,
     closestCenter,
+    type DragEndEvent,
     PointerSensor,
     useSensor,
     useSensors,
@@ -19,8 +20,7 @@ import {
 
 import { CSS } from "@dnd-kit/utilities";
 
-import { getCurrentUserId } from "@/lib/current-user";
-import { supabaseClient } from "@/lib/supabase-client";
+import { reorderSetlist } from "@/lib/admin-api";
 
 type Item = {
     id: string;
@@ -98,23 +98,20 @@ export default function SortableSetlist({
     items,
     onDelete,
     onError,
+    liveId,
 }: {
     items: Item[];
     onDelete: (id: string) => void;
     onError?: (message: string) => void;
+    liveId: string;
 }) {
-    const [localItems, setLocalItems] =
-        useState<Item[]>(items);
-
-    useEffect(() => {
-        setLocalItems(items);
-    }, [items]);
+    const [localItems, setLocalItems] = useState<Item[]>(items);
 
     const sensors = useSensors(
         useSensor(PointerSensor)
     );
 
-    async function handleDragEnd(event: any) {
+    async function handleDragEnd(event: DragEndEvent) {
         const { active, over } = event;
 
         if (!over || active.id === over.id) {
@@ -137,22 +134,22 @@ export default function SortableSetlist({
 
         setLocalItems(reordered);
 
-        const userId = await getCurrentUserId();
-        for (let i = 0; i < reordered.length; i++) {
-            const { error } = await supabaseClient
-                .from("setlist_items")
-                .update({
-                    order_no: i + 1,
-                    updated_user: userId,
-                })
-                .eq("id", reordered[i].id)
-                .eq("is_delete", false);
-
-            if (error) {
-                setLocalItems(localItems);
-                onError?.(`並び替え失敗: ${error.message}`);
-                return;
-            }
+        try {
+            await reorderSetlist(
+                liveId,
+                reordered.map((item, index) => ({
+                    id: item.id,
+                    order_no: index + 1,
+                })),
+            );
+        } catch (error) {
+            setLocalItems(localItems);
+            onError?.(
+                `並び替え失敗: ${
+                    error instanceof Error ? error.message : "unknown error"
+                }`,
+            );
+            return;
         }
     }
 
