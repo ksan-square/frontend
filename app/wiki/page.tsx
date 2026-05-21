@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import Pagination from "@/app/_components/pagination";
+import { getPublicWikiPages } from "@/lib/public-api";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -14,8 +15,6 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
-
-const PAGE_SIZE = 20;
 
 type SearchParams = Promise<{
     page?: string | string[];
@@ -100,48 +99,28 @@ export default async function WikiIndexPage({
     const {
         data: { user },
     } = await authClient.auth.getUser();
-
-    let countQuery = authClient
-        .from("wiki_pages")
-        .select("id", {
-            count: "exact",
-            head: true,
-        })
-        .eq("is_delete", false);
-
-    if (!user) {
-        countQuery = countQuery.eq("is_published", true);
+    let payload;
+    try {
+        payload = await getPublicWikiPages({
+            page: requestedPage,
+            sort,
+            direction,
+        });
+    } catch (error) {
+        return (
+            <main>
+                Wikiの取得に失敗しました:{" "}
+                {error instanceof Error ? error.message : "unknown error"}
+            </main>
+        );
     }
 
-    const { count, error: countError } = await countQuery;
-
-    if (countError) {
-        return <main>Wikiの取得に失敗しました: {countError.message}</main>;
-    }
-
-    const totalItems = count ?? 0;
-    const resolvedTotalPages = Math.max(Math.ceil(totalItems / PAGE_SIZE), 1);
-    const currentPage = Math.min(requestedPage, resolvedTotalPages);
-    const rangeStart = (currentPage - 1) * PAGE_SIZE;
-    const rangeEnd = rangeStart + PAGE_SIZE - 1;
-
-    let query = authClient
-        .from("wiki_pages")
-        .select("id,title,slug,is_published,created_at,updated_at")
-        .eq("is_delete", false)
-        .order(sort, { ascending: direction === "asc" });
-
-    if (!user) {
-        query = query.eq("is_published", true);
-    }
-
-    const { data: pages, error } = await query.range(rangeStart, rangeEnd);
-
-    if (error) {
-        return <main>Wikiの取得に失敗しました: {error.message}</main>;
-    }
-
-    const wikiPages = (pages ?? []) as WikiPage[];
+    const wikiPages = payload.items as WikiPage[];
+    const totalItems = payload.pagination.total_items;
+    const currentPage = payload.pagination.page;
+    const resolvedTotalPages = payload.pagination.total_pages;
+    const rangeStart = (currentPage - 1) * payload.pagination.page_size;
+    const rangeEnd = rangeStart + payload.pagination.page_size - 1;
 
     return (
         <main className="space-y-10">

@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import { DEFAULT_DESCRIPTION, createDescription, joinDescriptionParts } from "@/lib/seo";
-import { supabase } from "@/lib/supabase";
-import type { Live, SetlistItem } from "@/types";
+import { getPublicLiveDetail } from "@/lib/public-api";
 
 export const dynamic = "force-dynamic";
 
@@ -17,25 +16,14 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { id } = await params;
+    let payload;
+    try {
+        payload = await getPublicLiveDetail(id);
+    } catch {
+        payload = null;
+    }
 
-    const { data: liveData } = await supabase
-        .from("lives")
-        .select(`
-            id,
-            live_date,
-            live_start_time,
-            live_end_time,
-            benefit_meeting_time_note,
-            event_name,
-            memo,
-            venues!lives_venue_id_fkey (
-                name,
-                area
-            )
-        `)
-        .eq("id", id)
-        .eq("is_delete", false)
-        .maybeSingle();
+    const liveData = payload?.live;
 
     if (!liveData) {
         return {
@@ -44,9 +32,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         };
     }
 
-    const venue = Array.isArray(liveData.venues)
-        ? liveData.venues[0]
-        : liveData.venues;
     const liveTimeText = liveData.live_start_time
         ? liveData.live_end_time
             ? `${formatTime(liveData.live_start_time)}-${formatTime(liveData.live_end_time)}`
@@ -55,8 +40,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const description = joinDescriptionParts([
         liveData.live_date,
         liveTimeText,
-        venue?.name,
-        venue?.area,
+        liveData.venue?.name,
+        liveData.venue?.area,
         liveData.benefit_meeting_time_note,
         createDescription(liveData.memo, 80),
     ]);
@@ -87,47 +72,47 @@ export default async function LiveDetailPage({ params }: Props) {
         month: "2-digit",
         day: "2-digit",
     }).format(new Date());
-
-    const { data: liveData, error: liveError } = await supabase
-        .from("lives")
-        .select(`
-            id,
-            live_date,
-            same_day_order,
-            live_start_time,
-            live_end_time,
-            benefit_meeting_start_time,
-            benefit_meeting_end_time,
-            benefit_meeting_time_note,
-            benefit_meeting_place_detail,
-            ticket_url,
-            official_x_url,
-            event_name,
-            memo,
-            venues!lives_venue_id_fkey (
-                id,
-                name,
-                area,
-                google_map_url
-            ),
-            benefit_venue:venues!lives_benefit_venue_id_fkey (
-                id,
-                name,
-                area,
-                google_map_url
-            )
-        `)
-        .eq("id", id)
-        .eq("is_delete", false)
-        .single();
-
-    if (liveError || !liveData) {
-        return <main>ライブが見つかりませんでした。</main>;
+    let payload;
+    try {
+        payload = await getPublicLiveDetail(id);
+    } catch (error) {
+        return (
+            <main>
+                ライブの取得に失敗しました:{" "}
+                {error instanceof Error ? error.message : "unknown error"}
+            </main>
+        );
     }
 
-    const live = liveData as unknown as Live;
+    if (!payload.found || !payload.live) {
+        return (
+            <main className="space-y-8">
+                <Breadcrumbs
+                    items={[
+                        { href: "/lives", label: "ライブ" },
+                        { label: "ライブが見つかりません" },
+                    ]}
+                />
+                <section className="surface p-6 ring-1 ring-white/10 md:p-8">
+                    <h1 className="text-3xl font-black text-white">
+                        ライブが見つかりません
+                    </h1>
+                    <p className="mt-3 text-sm leading-7 text-zinc-400">
+                        指定されたライブは未登録か、現在は公開されていません。
+                    </p>
+                    <Link
+                        href="/lives"
+                        className="mt-5 inline-flex rounded-sm bg-white px-4 py-2 text-sm font-black text-black hover:bg-zinc-200"
+                    >
+                        ライブ一覧へ戻る
+                    </Link>
+                </section>
+            </main>
+        );
+    }
 
-    const venue = live.venues;
+    const live = payload.live;
+    const venue = live.venue;
     const benefitVenue = live.benefit_venue ?? venue;
     const isUpcoming = live.live_date >= today;
     const liveStartTime = formatTime(live.live_start_time);
@@ -150,31 +135,7 @@ export default async function LiveDetailPage({ params }: Props) {
             : `${benefitStartTime} 開始予定`
         : "未定";
 
-    const { data: setlist, error: setlistError } = await supabase
-        .from("setlist_items")
-        .select(`
-            id,
-            order_no,
-            note,
-            songs (
-                title,
-                slug,
-                is_delete
-            )
-        `)
-        .eq("live_id", id)
-        .eq("is_delete", false)
-        .order("order_no");
-
-    if (setlistError) {
-        return (
-            <main>
-                セトリの取得に失敗しました: {setlistError.message}
-            </main>
-        );
-    }
-
-    const items = (setlist ?? []) as SetlistItem[];
+    const items = payload.setlist_items;
 
     return (
         <main className="space-y-10">
@@ -288,11 +249,7 @@ export default async function LiveDetailPage({ params }: Props) {
 
                 <ol className="space-y-3">
                     {items.map((item) => {
-                        const song = Array.isArray(item.songs)
-                            ? item.songs[0]
-                            : item.songs;
-                        const visibleSong =
-                            song && !song.is_delete ? song : null;
+                        const visibleSong = item.song;
 
                         return (
                             <li

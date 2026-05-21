@@ -7,6 +7,7 @@ import {
     createDescription,
     joinDescriptionParts,
 } from "@/lib/seo";
+import { getPublicWikiPageDetail } from "@/lib/public-api";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import CommentForm from "./comment-form";
 import DeleteCommentButton from "./delete-comment-button";
@@ -19,22 +20,14 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { slug } = await params;
-    const authClient = await createSupabaseServerClient();
-    const {
-        data: { user },
-    } = await authClient.auth.getUser();
-
-    let query = authClient
-        .from("wiki_pages")
-        .select("title,slug,body_markdown,is_published,updated_at")
-        .eq("slug", slug)
-        .eq("is_delete", false);
-
-    if (!user) {
-        query = query.eq("is_published", true);
+    let payload;
+    try {
+        payload = await getPublicWikiPageDetail(slug);
+    } catch {
+        payload = null;
     }
 
-    const { data: page } = await query.maybeSingle();
+    const page = payload?.page;
 
     if (!page) {
         return {
@@ -88,36 +81,47 @@ export default async function WikiDetailPage({ params }: Props) {
     const {
         data: { user },
     } = await authClient.auth.getUser();
-
-    let query = authClient
-        .from("wiki_pages")
-        .select("id,title,slug,body_markdown,is_published,updated_at")
-        .eq("slug", slug)
-        .eq("is_delete", false);
-
-    if (!user) {
-        query = query.eq("is_published", true);
+    let payload;
+    try {
+        payload = await getPublicWikiPageDetail(slug);
+    } catch (error) {
+        return (
+            <main>
+                Wikiページの取得に失敗しました:{" "}
+                {error instanceof Error ? error.message : "unknown error"}
+            </main>
+        );
     }
 
-    const { data: page, error } = await query.single();
-
-    if (error || !page) {
-        return <main>Wikiページが見つかりませんでした。</main>;
+    if (!payload.found || !payload.page) {
+        return (
+            <main className="space-y-8">
+                <Breadcrumbs
+                    items={[
+                        { href: "/wiki", label: "Wiki" },
+                        { label: "Wikiページが見つかりません" },
+                    ]}
+                />
+                <section className="surface p-6 ring-1 ring-white/10 md:p-8">
+                    <h1 className="text-3xl font-black text-white">
+                        Wikiページが見つかりません
+                    </h1>
+                    <p className="mt-3 text-sm leading-7 text-zinc-400">
+                        指定されたページは未登録か、現在は公開されていません。
+                    </p>
+                    <Link
+                        href="/wiki"
+                        className="mt-5 inline-flex rounded-sm bg-white px-4 py-2 text-sm font-black text-black hover:bg-zinc-200"
+                    >
+                        Wiki一覧へ戻る
+                    </Link>
+                </section>
+            </main>
+        );
     }
 
-    const wikiPage = page as WikiPage;
-    const { data: comments, error: commentsError } = await authClient
-        .from("wiki_comments")
-        .select("id,nickname,body,created_at")
-        .eq("wiki_page_id", wikiPage.id)
-        .eq("is_delete", false)
-        .order("created_at", { ascending: true });
-
-    if (commentsError) {
-        return <main>コメントの取得に失敗しました: {commentsError.message}</main>;
-    }
-
-    const wikiComments = (comments ?? []) as WikiComment[];
+    const wikiPage = payload.page as WikiPage;
+    const wikiComments = payload.comments as WikiComment[];
 
     return (
         <main className="space-y-10">

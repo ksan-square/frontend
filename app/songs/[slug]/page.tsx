@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import SongRichMarkdown from "@/app/_components/song-rich-markdown";
 import {
@@ -6,8 +7,7 @@ import {
     createDescription,
     joinDescriptionParts,
 } from "@/lib/seo";
-import { supabase } from "@/lib/supabase";
-import type { Member, SongMarkdownPage, SongPart } from "@/types";
+import { getPublicSongDetail, type PublicSongPart } from "@/lib/public-api";
 
 export const dynamic = "force-dynamic";
 
@@ -18,12 +18,14 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { slug } = await params;
 
-    const { data: song } = await supabase
-        .from("songs")
-        .select("id,title,description,lyricist,composer,arranger")
-        .eq("slug", slug)
-        .eq("is_delete", false)
-        .maybeSingle();
+    let payload;
+    try {
+        payload = await getPublicSongDetail(slug);
+    } catch {
+        payload = null;
+    }
+
+    const song = payload?.song;
 
     if (!song) {
         return {
@@ -32,14 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         };
     }
 
-    const { data: markdownPage } = await supabase
-        .from("song_markdown_pages")
-        .select("body_markdown")
-        .eq("song_id", song.id)
-        .eq("is_delete", false)
-        .maybeSingle();
-
-    const bodyDescription = createDescription(markdownPage?.body_markdown, 90);
+    const bodyDescription = createDescription(payload?.markdown_page?.body_markdown, 90);
     const description = joinDescriptionParts([
         song.description,
         bodyDescription,
@@ -81,14 +76,12 @@ function extractMarkdownHeadings(markdown: string) {
     }));
 }
 
-function getVocalLabel(part: SongPart) {
+function getVocalLabel(part: PublicSongPart) {
     if (part.vocal_type === "all") return "全員";
     if (part.vocal_type === "none") return "歌唱なし";
 
     const names = part.song_part_members
-        ?.filter((spm) => !spm.is_delete)
         .flatMap((spm) => spm.members ?? [])
-        .filter((member) => !member.is_delete)
         .map((member) => member.name);
 
     return names.length > 0 ? names.join(" / ") : "未設定";
@@ -96,83 +89,57 @@ function getVocalLabel(part: SongPart) {
 
 export default async function SongDetailPage({ params }: Props) {
     const { slug } = await params;
-
-    const { data: song, error: songError } = await supabase
-        .from("songs")
-        .select("id,title,description,lyricist,composer,arranger")
-        .eq("slug", slug)
-        .eq("is_delete", false)
-        .single();
-
-    if (songError || !song) {
-        return <main>曲が見つかりませんでした。</main>;
+    let payload;
+    try {
+        payload = await getPublicSongDetail(slug);
+    } catch (error) {
+        return (
+            <main>
+                曲の取得に失敗しました:{" "}
+                {error instanceof Error ? error.message : "unknown error"}
+            </main>
+        );
     }
 
-    const { data: markdownPage, error: markdownError } = await supabase
-        .from("song_markdown_pages")
-        .select("id,song_id,body_markdown")
-        .eq("song_id", song.id)
-        .eq("is_delete", false)
-        .maybeSingle();
-
-    if (markdownError) {
-        return <main>歌詞Markdownの取得に失敗しました: {markdownError.message}</main>;
+    if (!payload.found || !payload.song) {
+        return (
+            <main className="space-y-8">
+                <Breadcrumbs
+                    items={[
+                        { href: "/songs", label: "曲一覧" },
+                        { label: "曲が見つかりません" },
+                    ]}
+                />
+                <section className="surface p-6 ring-1 ring-white/10 md:p-8">
+                    <h1 className="text-3xl font-black text-white">
+                        曲が見つかりません
+                    </h1>
+                    <p className="mt-3 text-sm leading-7 text-zinc-400">
+                        指定された曲は未登録か、現在は公開されていません。
+                    </p>
+                    <Link
+                        href="/songs"
+                        className="mt-5 inline-flex rounded-sm bg-white px-4 py-2 text-sm font-black text-black hover:bg-zinc-200"
+                    >
+                        曲一覧へ戻る
+                    </Link>
+                </section>
+            </main>
+        );
     }
 
-    const songMarkdownPage = markdownPage as SongMarkdownPage | null;
-
-    const { data: members } = await supabase
-        .from("members")
-        .select(
-            "id,name,is_delete,member_color_name,member_color_code,lyric_display_color_code",
-        )
-        .eq("is_delete", false)
-        .order("sort_order", { ascending: true });
-
-    const { data: parts, error: partsError } = await supabase
-        .from("song_parts")
-        .select(`
-      id,
-      order_no,
-      section_name,
-      part_type,
-      vocal_type,
-      lyric_text,
-      call_text,
-      note,
-      song_part_members (
-        is_delete,
-        display_order,
-        members (
-          id,
-          name,
-          is_delete,
-          member_color_name,
-          member_color_code,
-          lyric_display_color_code
-        )
-      )
-    `)
-        .eq("song_id", song.id)
-        .eq("is_delete", false)
-        .order("order_no");
-
-    if (partsError) {
-        return <main>歌割の取得に失敗しました: {partsError.message}</main>;
-    }
-
-    const songParts = (parts ?? []) as SongPart[];
-    const displayMembers = (members ?? []) as Member[];
+    const song = payload.song;
+    const songMarkdownPage = payload.markdown_page;
+    const songParts = payload.parts;
+    const displayMembers = payload.members;
     const useMarkdownPage = Boolean(songMarkdownPage?.body_markdown);
     const sectionIndex = useMarkdownPage
         ? extractMarkdownHeadings(songMarkdownPage?.body_markdown ?? "")
-        : songParts
-              .filter((part) => part.section_name)
-              .map((part) => ({
-                  id: part.id,
-                  label: part.section_name as string,
-                  anchorId: createAnchorId(`${part.order_no}-${part.section_name}`),
-              }));
+        : payload.section_index.map((item) => ({
+              id: item.id,
+              label: item.label,
+              anchorId: item.anchor_id,
+          }));
 
     return (
         <main className="space-y-10">
@@ -235,10 +202,9 @@ export default async function SongDetailPage({ params }: Props) {
                     )}
 
                     {!useMarkdownPage && songParts.map((part) => {
-                        const members = (part.song_part_members
-                            ?.filter((spm) => !spm.is_delete)
-                            ?.flatMap((spm) => spm.members ?? [])
-                            .filter((member) => member && !member.is_delete)) ?? [];
+                        const members = part.song_part_members.flatMap(
+                            (spm) => spm.members ?? [],
+                        );
                         const anchorId = createAnchorId(
                             `${part.order_no}-${part.section_name ?? part.part_type}`,
                         );

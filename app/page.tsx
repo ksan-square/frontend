@@ -1,6 +1,6 @@
 ﻿import type { Metadata } from "next";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { getPublicHome } from "@/lib/public-api";
 import { getSiteUrl } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -18,12 +18,6 @@ function formatTime(time: string | null) {
   return time ? time.slice(0, 5) : null;
 }
 
-type NextLiveCandidate = {
-  live_date: string;
-  live_start_time: string | null;
-  benefit_meeting_end_time: string | null;
-};
-
 function createShareUrl() {
   const shareText =
     "こしあんのファンへ！\n\n #こしあんスクエア というサイトができました！\n\n🎤 ライブ予定の確認\n📣 コール表・歌割表の確認\n\nができて、予習や現場でかなり便利です！\n\nこれから機能も増えていくらしいので気になる人はぜひ！\n\n#こしあん\n#宵越しのアンサンブル\n\n";
@@ -35,179 +29,37 @@ function createShareUrl() {
   return `https://twitter.com/intent/tweet?${params.toString()}`;
 }
 
-function getJapanTimeKey(date: Date) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Tokyo",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(date);
-  const hour = parts.find((part) => part.type === "hour")?.value ?? "00";
-  const minute = parts.find((part) => part.type === "minute")?.value ?? "00";
-
-  return `${hour === "24" ? "00" : hour}:${minute}`;
-}
-
-function isLiveStillUpcomingToday(
-  live: NextLiveCandidate,
-  sameDayLives: NextLiveCandidate[],
-  liveIndex: number,
-  currentTime: string,
-) {
-  const benefitEndTime = formatTime(live.benefit_meeting_end_time);
-
-  if (benefitEndTime) {
-    return currentTime <= benefitEndTime;
-  }
-
-  const nextLiveStartTime = formatTime(sameDayLives[liveIndex + 1]?.live_start_time);
-
-  if (sameDayLives.length >= 2 && nextLiveStartTime) {
-    return currentTime < nextLiveStartTime;
-  }
-
-  return true;
-}
-
-function findNextLive<T extends NextLiveCandidate>(
-  lives: T[] | null,
-  today: string,
-  currentTime: string,
-) {
-  const candidates = lives ?? [];
-
-  return candidates.find((live, index) => {
-    if (live.live_date > today) {
-      return true;
-    }
-
-    if (live.live_date < today) {
-      return false;
-    }
-
-    const sameDayLives = candidates.filter(
-      (candidate) => candidate.live_date === live.live_date,
-    );
-    const sameDayIndex = sameDayLives.findIndex(
-      (candidate) => candidate === live,
-    );
-
-    return isLiveStillUpcomingToday(
-      live,
-      sameDayLives,
-      sameDayIndex >= 0 ? sameDayIndex : index,
-      currentTime,
-    );
-  });
-}
-
 export default async function Home() {
-  const now = new Date();
-  const today = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Tokyo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(now);
-  const currentTime = getJapanTimeKey(now);
-
-  const [
-    { count: songCount },
-    { count: liveCount },
-    { count: wikiCount },
-    { data: notices },
-    { data: latestSongs },
-    { data: latestLives },
-    { data: latestWikiPages },
-    { data: nextLives },
-    { data: upcomingPreviewLives },
-  ] = await Promise.all([
-    supabase
-      .from("songs")
-      .select("*", { count: "exact", head: true })
-      .eq("is_delete", false),
-    supabase
-      .from("lives")
-      .select("*", { count: "exact", head: true })
-      .eq("is_delete", false),
-    supabase
-      .from("wiki_pages")
-      .select("*", { count: "exact", head: true })
-      .eq("is_delete", false)
-      .eq("is_published", true),
-    supabase
-      .from("notices")
-      .select("id,title,tag,body,published_at")
-      .eq("is_delete", false)
-      .eq("is_published", true)
-      .order("published_at", { ascending: false })
-      .limit(3),
-    supabase
-      .from("songs")
-      .select("id,title,slug,description")
-      .eq("is_delete", false)
-      .order("order_no", { ascending: true })
-      .limit(3),
-    supabase
-      .from("lives")
-      .select(
-        "id,live_date,live_start_time,live_end_time,event_name,venues(name,area)",
-      )
-      .eq("is_delete", false)
-      .lt("live_date", today)
-      .order("live_date", { ascending: false })
-      .order("same_day_order", { ascending: true })
-      .limit(3),
-    supabase
-      .from("wiki_pages")
-      .select("id,title,slug,updated_at")
-      .eq("is_delete", false)
-      .eq("is_published", true)
-      .order("updated_at", { ascending: false })
-      .limit(3),
-    supabase
-      .from("lives")
-      .select(
-        "id,live_date,live_start_time,live_end_time,benefit_meeting_start_time,benefit_meeting_end_time,benefit_meeting_time_note,benefit_meeting_place_detail,ticket_url,official_x_url,event_name,venues!lives_venue_id_fkey(name,area),benefit_venue:venues!lives_benefit_venue_id_fkey(name,area)",
-      )
-      .eq("is_delete", false)
-      .gte("live_date", today)
-      .order("live_date", { ascending: true })
-      .order("live_start_time", { ascending: true })
-      .order("same_day_order", { ascending: true }),
-    supabase
-      .from("lives")
-      .select(
-        "id,live_date,live_start_time,live_end_time,event_name,venues(name,area)",
-      )
-      .eq("is_delete", false)
-      .gte("live_date", today)
-      .order("live_date", { ascending: true })
-      .order("live_start_time", { ascending: true })
-      .order("same_day_order", { ascending: true })
-      .limit(3),
-  ]);
+  const payload = await getPublicHome();
+  const songCount = payload.counts.songs;
+  const liveCount = payload.counts.lives;
+  const wikiCount = payload.counts.wiki_pages;
+  const notices = payload.notices;
+  const latestSongs = payload.latest_songs;
+  const latestLives = payload.latest_lives;
+  const latestWikiPages = payload.latest_wiki_pages;
+  const nextLive = payload.next_live;
 
   const primaryActions = [
     {
       href: "/songs",
       label: "曲を探す",
       description: "歌割、コール、作詞作曲情報を見る。",
-      count: `${songCount ?? 0} 曲`,
+      count: `${songCount} 曲`,
       symbol: "♪",
     },
     {
       href: "/lives",
       label: "ライブを探す",
       description: "日付、会場、イベントごとのセトリを見る。",
-      count: `${liveCount ?? 0} 本`,
+      count: `${liveCount} 本`,
       symbol: "LIVE",
     },
     {
       href: "/wiki",
       label: "Wikiを読む",
       description: "現場メモや共有情報を確認する。",
-      count: `${wikiCount ?? 0} 件`,
+      count: `${wikiCount} 件`,
       symbol: "W",
     },
   ];
@@ -216,26 +68,14 @@ export default async function Home() {
     return new Date(date).toLocaleDateString("ja-JP");
   }
 
-  const nextLive = findNextLive(nextLives, today, currentTime);
-  const nextLiveVenue = nextLive
-    ? Array.isArray(nextLive.venues)
-      ? nextLive.venues[0]
-      : nextLive.venues
-    : null;
-  const nextBenefitVenue = nextLive
-    ? Array.isArray(nextLive.benefit_venue)
-      ? nextLive.benefit_venue[0]
-      : nextLive.benefit_venue
-    : null;
+  const nextLiveVenue = nextLive?.venue ?? null;
+  const nextBenefitVenue = nextLive?.benefit_venue ?? null;
   const nextBenefitPlaceText = nextLive
     ? nextBenefitVenue?.name
       ? `${nextBenefitVenue.name}${nextBenefitVenue.area ? ` / ${nextBenefitVenue.area}` : ""}${nextLive.benefit_meeting_place_detail ? ` / ${nextLive.benefit_meeting_place_detail}` : ""}`
       : (nextLive.benefit_meeting_place_detail ?? "会場未定")
     : null;
-  const livePreviewLives =
-    latestLives && latestLives.length > 0
-      ? latestLives
-      : (upcomingPreviewLives ?? []);
+  const livePreviewLives = latestLives;
   const nextLiveTimeText = nextLive
     ? nextLive.live_start_time
       ? nextLive.live_end_time
@@ -468,9 +308,7 @@ export default async function Home() {
 
           <div className="space-y-3">
             {livePreviewLives?.map((live) => {
-              const venue = Array.isArray(live.venues)
-                ? live.venues[0]
-                : live.venues;
+              const venue = live.venue;
               const startTime = formatTime(live.live_start_time ?? null);
               const endTime = formatTime(live.live_end_time ?? null);
 

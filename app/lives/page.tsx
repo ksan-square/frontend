@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import Pagination from "@/app/_components/pagination";
-import { supabase } from "@/lib/supabase";
-import type { Live } from "@/types";
+import { getPublicLives } from "@/lib/public-api";
 
 export const metadata: Metadata = {
   title: "ライブ予定・履歴",
@@ -29,12 +28,6 @@ type SearchParams = Promise<{
   page?: string | string[];
 }>;
 
-type MonthIndexItem = {
-  key: string;
-  label: string;
-  count: number;
-};
-
 function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -57,16 +50,6 @@ function parseMonth(value: string | string[] | undefined) {
   }
 
   return month;
-}
-
-function getNextMonth(month: string) {
-  const [year, monthNumber] = month.split("-").map(Number);
-  const date = new Date(Date.UTC(year, monthNumber, 1));
-
-  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(
-    2,
-    "0",
-  )}`;
 }
 
 function formatMonthLabel(month: string) {
@@ -95,25 +78,6 @@ function formatWeekLabel(date: string) {
   return `${day.getMonth() + 1}月 第${weekOfMonth}週`;
 }
 
-function buildMonthIndex(liveDates: { live_date: string | null }[]) {
-  const counts = new Map<string, number>();
-
-  for (const live of liveDates) {
-    if (!live.live_date) {
-      continue;
-    }
-
-    const month = getMonthKey(live.live_date);
-    counts.set(month, (counts.get(month) ?? 0) + 1);
-  }
-
-  return Array.from(counts.entries()).map<MonthIndexItem>(([key, count]) => ({
-    key,
-    label: formatMonthLabel(key),
-    count,
-  }));
-}
-
 function createLivesHref(month?: string | null) {
   return month ? `/lives?month=${month}` : "/lives";
 }
@@ -126,132 +90,29 @@ export default async function LivesPage({
   const params = await searchParams;
   const selectedMonth = parseMonth(params.month);
   const requestedPage = parsePage(params.page);
-  const today = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Tokyo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-
-  const { data: liveDates, error: liveDatesError } = await supabase
-    .from("lives")
-    .select("live_date")
-    .eq("is_delete", false)
-    .lt("live_date", today)
-    .order("live_date", { ascending: false });
-
-  if (liveDatesError) {
+  let payload;
+  try {
+    payload = await getPublicLives({
+      month: selectedMonth,
+      page: requestedPage,
+    });
+  } catch (error) {
     return (
-      <main>ライブ履歴の取得に失敗しました: {liveDatesError.message}</main>
+      <main>
+        ライブの取得に失敗しました:{" "}
+        {error instanceof Error ? error.message : "unknown error"}
+      </main>
     );
   }
 
-  const monthIndex = buildMonthIndex(liveDates ?? []);
-  const monthStart = selectedMonth ? `${selectedMonth}-01` : null;
-  const monthEnd = selectedMonth ? `${getNextMonth(selectedMonth)}-01` : null;
-  const selectedMonthItem = monthIndex.find(
-    (month) => month.key === selectedMonth,
-  );
-  const totalLives = selectedMonth
-    ? (selectedMonthItem?.count ?? 0)
-    : (liveDates?.length ?? 0);
-  const totalPages = Math.max(Math.ceil(totalLives / PAGE_SIZE), 1);
-  const currentPage = Math.min(requestedPage, totalPages);
+  const monthIndex = payload.month_index;
+  const totalLives = payload.pagination.total_items;
+  const totalPages = payload.pagination.total_pages;
+  const currentPage = payload.pagination.page;
   const rangeStart = (currentPage - 1) * PAGE_SIZE;
   const rangeEnd = rangeStart + PAGE_SIZE - 1;
-
-  const { data: upcomingLives, error: upcomingLivesError } = await supabase
-    .from("lives")
-    .select(
-      `
-        id,
-        live_date,
-        same_day_order,
-        live_start_time,
-        live_end_time,
-        benefit_meeting_start_time,
-        benefit_meeting_end_time,
-        benefit_meeting_time_note,
-        benefit_meeting_place_detail,
-        ticket_url,
-        official_x_url,
-        event_name,
-        memo,
-        venues!lives_venue_id_fkey (
-            id,
-            name,
-            area,
-            google_map_url
-        ),
-        benefit_venue:venues!lives_benefit_venue_id_fkey (
-            id,
-            name,
-            area,
-            google_map_url
-        )
-    `,
-    )
-    .eq("is_delete", false)
-    .gte("live_date", today)
-    .order("live_date", { ascending: true })
-    .order("live_start_time", { ascending: true })
-    .order("same_day_order", { ascending: true });
-
-  if (upcomingLivesError) {
-    return (
-      <main>ライブ予定の取得に失敗しました: {upcomingLivesError.message}</main>
-    );
-  }
-
-  let livesQuery = supabase
-    .from("lives")
-    .select(
-      `
-        id,
-        live_date,
-        same_day_order,
-        live_start_time,
-        live_end_time,
-        benefit_meeting_start_time,
-        benefit_meeting_end_time,
-        benefit_meeting_time_note,
-        benefit_meeting_place_detail,
-        ticket_url,
-        official_x_url,
-        event_name,
-        memo,
-        venues!lives_venue_id_fkey (
-            id,
-            name,
-            area,
-            google_map_url
-        ),
-        benefit_venue:venues!lives_benefit_venue_id_fkey (
-            id,
-            name,
-            area,
-            google_map_url
-        )
-    `,
-    )
-    .eq("is_delete", false)
-    .lt("live_date", today)
-    .order("live_date", { ascending: false })
-    .order("same_day_order", { ascending: true });
-
-  if (monthStart && monthEnd) {
-    livesQuery = livesQuery
-      .gte("live_date", monthStart)
-      .lt("live_date", monthEnd);
-  }
-
-  const { data, error } = await livesQuery.range(rangeStart, rangeEnd);
-
-  if (error) {
-    return <main>ライブ履歴の取得に失敗しました: {error.message}</main>;
-  }
-
-  const lives = (data ?? []) as unknown as Live[];
+  const lives = payload.history_items;
+  const upcomingLives = payload.upcoming_items;
   const historyLives = lives.map((live, index) => {
     const month = getMonthKey(live.live_date);
     const week = getWeekKey(live.live_date);
@@ -296,8 +157,8 @@ export default async function LivesPage({
           </div>
         )}
 
-        {(upcomingLives as unknown as Live[]).map((live) => {
-          const venue = live.venues;
+        {upcomingLives.map((live) => {
+          const venue = live.venue;
           const benefitVenue = live.benefit_venue ?? venue;
           const liveStartTime = formatTime(live.live_start_time);
           const liveEndTime = formatTime(live.live_end_time);
@@ -435,7 +296,7 @@ export default async function LivesPage({
         )}
 
         {historyLives.map(({ live, month, shouldShowMonth, shouldShowWeek }) => {
-          const venue = live.venues;
+          const venue = live.venue;
 
           return (
             <div key={live.id} className="space-y-3">
