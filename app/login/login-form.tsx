@@ -38,11 +38,13 @@ export default function LoginForm() {
                     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.slice(0, 24) ?? null,
             };
 
-            console.error(`[auth-debug] ${event}`, payload);
-            console.error(
-                `[auth-debug-json] ${event}`,
-                JSON.stringify(payload, null, 2),
-            );
+            const level =
+                event.includes("failed") || event.includes("error")
+                    ? console.error
+                    : console.info;
+
+            level(`[auth-debug] ${event}`, payload);
+            level(`[auth-debug-json] ${event}`, JSON.stringify(payload, null, 2));
         },
         [redirectedFrom],
     );
