@@ -9,19 +9,19 @@ export default function AdminPage() {
         {
             href: "/admin/members",
             title: "メンバー管理",
-            description: "表示順、カラー、活動状態を整えます。",
+            description: "表示順、カラーを編集できます。",
             symbol: "MBR",
         },
         {
             href: "/admin/songs",
             title: "曲管理",
-            description: "曲情報、歌詞、コール導線を更新します。",
+            description: "曲情報、歌詞、コールを編集できます。",
             symbol: "♪",
         },
         {
             href: "/admin/venues",
             title: "会場管理",
-            description: "ライブ会場と特典会会場の情報を整理します。",
+            description: "ライブ会場と特典会会場の情報編集できます。",
             symbol: "MAP",
         },
         {
@@ -33,7 +33,7 @@ export default function AdminPage() {
         {
             href: "/admin/notices",
             title: "お知らせ管理",
-            description: "公開状態と掲載内容を調整します。",
+            description: "公開状態と掲載内容を編集できます。",
             symbol: "NEWS",
         },
     ];

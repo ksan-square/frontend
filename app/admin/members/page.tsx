@@ -29,7 +29,7 @@ export default async function AdminMembersPage() {
                             メンバー管理
                         </h1>
                         <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-300 md:text-base">
-                            表示順、カラー、活動ステータスを公開画面に合わせて保ちます。
+                            表示順、カラー、活動ステータスを編集できます。
                         </p>
                     </div>
 
