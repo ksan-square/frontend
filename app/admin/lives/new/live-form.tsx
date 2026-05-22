@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createLive } from "@/lib/admin-api";
+import VenueCombobox from "../venue-combobox";
+import { showToast } from "@/lib/toast";
 
 export default function LiveForm({
     venues,
@@ -26,6 +28,12 @@ export default function LiveForm({
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        if (!liveDate || !eventName.trim()) {
+            const nextMessage = "日付とイベント名を入力してください。";
+            setMessage(nextMessage);
+            showToast({ kind: "error", text: nextMessage });
+            return;
+        }
         try {
             const data = await createLive({
                 live_date: liveDate,
@@ -36,17 +44,17 @@ export default function LiveForm({
                 ticket_url: ticketUrl || null,
                 official_x_url: officialXUrl || null,
                 memo: memo || null,
-            })
-            alert("ライブを登録しました。");
+            });
+            showToast({ kind: "success", text: "ライブを登録しました。" });
             setMessage("ライブを登録した。");
             setEventName("");
             setMemo("");
             router.refresh();
             router.push(`/admin/lives/${data.id}/edit`);
         } catch (error) {
-            const message = error instanceof Error ? error.message : "登録失敗";
-            alert(`登録失敗: ${message}`);
-            setMessage(`登録失敗: ${message}`);
+            const nextMessage = error instanceof Error ? error.message : "登録失敗";
+            showToast({ kind: "error", text: nextMessage });
+            setMessage(`登録失敗: ${nextMessage}`);
             return;
         }
     }
@@ -59,15 +67,11 @@ export default function LiveForm({
 
             <input className="w-full rounded-xl bg-zinc-950 p-3" placeholder="イベント名" value={eventName} onChange={(e) => setEventName(e.target.value)} />
 
-            <select className="w-full rounded-xl bg-zinc-950 p-3" value={venueId} onChange={(e) => setVenueId(e.target.value)}>
-                <option value="">基準会場を未設定</option>
-                {venues.map((venue) => (
-                    <option key={venue.id} value={venue.id}>
-                        {venue.name}
-                        {venue.area ? ` / ${venue.area}` : ""}
-                    </option>
-                ))}
-            </select>
+            <VenueCombobox
+                initialOptions={venues}
+                onChange={(venue) => setVenueId(venue?.id ?? "")}
+                placeholder="基準会場を検索"
+            />
 
             <input className="w-full rounded-xl bg-zinc-950 p-3" placeholder="親ライブの場所補足 例: メインステージ" value={placeDetail} onChange={(e) => setPlaceDetail(e.target.value)} />
 

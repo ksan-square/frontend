@@ -261,8 +261,8 @@ export function getAdminMemberDetail(memberId: string) {
     return adminServerFetch<AdminMemberDetailResponse>(`/api/v1/admin/members/${memberId}`);
 }
 
-export function getAdminVenues() {
-    return adminServerFetch<AdminVenueListResponse>("/api/v1/admin/venues");
+export function getAdminVenues(params?: { q?: string | null; limit?: number }) {
+    return adminServerFetch<AdminVenueListResponse>("/api/v1/admin/venues", params);
 }
 
 export function getAdminVenueDetail(venueId: string) {

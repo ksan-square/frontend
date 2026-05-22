@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import type { AdminLiveSummary } from "@/lib/admin-server-api";
 import { updateLive } from "./actions";
+import VenueCombobox from "./venue-combobox";
+import { showToast } from "@/lib/toast";
 
 type LiveFormProps = {
     initialData: AdminLiveSummary;
@@ -17,11 +19,16 @@ export default function LiveForm({ initialData, venues }: LiveFormProps) {
     const router = useRouter();
 
     async function handleSubmit(formData: FormData) {
-        await updateLive(initialData.id, formData);
-
-        alert("ライブを更新しました。");
-        router.refresh();
-        router.push("/admin/lives");
+        try {
+            await updateLive(initialData.id, formData);
+            showToast({ kind: "success", text: "ライブを更新しました。" });
+            router.refresh();
+            router.push("/admin/lives");
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "ライブ更新に失敗しました。";
+            showToast({ kind: "error", text: message });
+            return;
+        }
     }
 
     return (
@@ -47,19 +54,13 @@ export default function LiveForm({ initialData, venues }: LiveFormProps) {
                 className="w-full rounded-xl bg-zinc-900 p-3"
             />
 
-            <select
+            <VenueCombobox
                 name="venue_id"
-                defaultValue={initialData.venue?.id ?? ""}
-                className="w-full rounded-xl bg-zinc-900 p-3"
-            >
-                <option value="">基準会場を未設定</option>
-                {venues.map((venue) => (
-                    <option key={venue.id} value={venue.id}>
-                        {venue.name}
-                        {venue.area ? ` / ${venue.area}` : ""}
-                    </option>
-                ))}
-            </select>
+                initialVenue={initialData.venue}
+                initialOptions={venues}
+                onChange={() => undefined}
+                placeholder="基準会場を検索"
+            />
 
             <input
                 name="place_detail"

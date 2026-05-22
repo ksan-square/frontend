@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import GoogleAnalytics from "@/app/_components/google-analytics";
+import ToastViewport from "@/app/_components/toast-viewport";
 import { DEFAULT_DESCRIPTION, SITE_NAME, createMetadataBase } from "@/lib/seo";
 import "./globals.css";
 
@@ -103,6 +104,7 @@ export default function RootLayout({
         </header>
 
         <div className="mx-auto max-w-6xl px-4 py-10 md:py-14">{children}</div>
+        <ToastViewport />
       </body>
       <GoogleAnalytics />
     </html>

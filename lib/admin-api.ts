@@ -4,6 +4,8 @@ type AdminFetchInit = Omit<RequestInit, "headers"> & {
     headers?: Record<string, string>;
 };
 
+type QueryValue = string | number | null | undefined;
+
 function getApiBaseUrl() {
     return (
         process.env.FASTAPI_BASE_URL ??
@@ -34,6 +36,48 @@ async function adminFetch<T>(path: string, init: AdminFetchInit = {}): Promise<T
     }
 
     const response = await fetch(new URL(path, getApiBaseUrl()), {
+        ...init,
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            ...(init.headers ?? {}),
+        },
+    });
+
+    if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || `Request failed: ${response.status}`);
+    }
+
+    if (response.status === 204) {
+        return undefined as T;
+    }
+
+    return response.json() as Promise<T>;
+}
+
+function buildAdminUrl(path: string, query?: Record<string, QueryValue>) {
+    const url = new URL(path, getApiBaseUrl());
+    Object.entries(query ?? {}).forEach(([key, value]) => {
+        if (value === null || value === undefined || value === "") {
+            return;
+        }
+        url.searchParams.set(key, String(value));
+    });
+    return url.toString();
+}
+
+async function adminFetchWithQuery<T>(
+    path: string,
+    query?: Record<string, QueryValue>,
+    init: AdminFetchInit = {},
+): Promise<T> {
+    const token = await getAccessToken();
+    if (!token) {
+        throw new Error("ログインが必要です。");
+    }
+
+    const response = await fetch(buildAdminUrl(path, query), {
         ...init,
         headers: {
             "Content-Type": "application/json",
@@ -304,6 +348,21 @@ export async function createVenue(payload: Record<string, unknown>) {
         method: "POST",
         body: JSON.stringify(payload),
     });
+}
+
+export async function searchVenues(params?: {
+    q?: string | null;
+    limit?: number;
+}) {
+    return adminFetchWithQuery<{
+        items: {
+            id: string;
+            name: string;
+            area: string | null;
+            address: string | null;
+            google_map_url: string | null;
+        }[];
+    }>("/api/v1/admin/venues", params);
 }
 
 export async function updateVenue(venueId: string, payload: Record<string, unknown>) {
