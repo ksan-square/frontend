@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { NextResponse, type NextRequest } from "next/server";
+import { createSupabaseRouteHandlerClient } from "@/lib/supabase-route-handler";
 
 function normalizeNextPath(path: string | null) {
     if (!path || !path.startsWith("/")) {
@@ -8,10 +8,11 @@ function normalizeNextPath(path: string | null) {
     return path;
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
     const requestUrl = new URL(request.url);
     const code = requestUrl.searchParams.get("code");
     const nextPath = normalizeNextPath(requestUrl.searchParams.get("next"));
+    const redirectResponse = NextResponse.redirect(new URL(nextPath, requestUrl.origin));
 
     if (!code) {
         const loginUrl = new URL("/login", requestUrl.origin);
@@ -20,7 +21,7 @@ export async function GET(request: Request) {
         return NextResponse.redirect(loginUrl);
     }
 
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseRouteHandlerClient(request, redirectResponse);
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
@@ -30,5 +31,5 @@ export async function GET(request: Request) {
         return NextResponse.redirect(loginUrl);
     }
 
-    return NextResponse.redirect(new URL(nextPath, requestUrl.origin));
+    return redirectResponse;
 }
