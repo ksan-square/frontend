@@ -101,6 +101,28 @@ export async function saveSongMarkdown(songId: string, body_markdown: string) {
     });
 }
 
+export async function saveSongContentBlocks(
+    songId: string,
+        items: {
+            id?: string | null;
+            block_type: "section" | "member" | "call" | "note" | "other";
+            order_no: number;
+            performer_label: string | null;
+            section_label: string | null;
+            body_markdown: string;
+        note: string | null;
+        members: {
+            member_id: string;
+            display_order: number;
+        }[];
+    }[],
+) {
+    return adminFetch<{ success: boolean }>(`/api/v1/admin/songs/${songId}/content-blocks`, {
+        method: "PUT",
+        body: JSON.stringify({ items }),
+    });
+}
+
 export async function createLive(payload: Record<string, unknown>) {
     return adminFetch<{ id: string }>("/api/v1/admin/lives", {
         method: "POST",

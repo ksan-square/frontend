@@ -83,6 +83,16 @@ export type PublicSongDetailResponse = {
         song_id: string;
         body_markdown: string;
     } | null;
+    content_blocks: {
+        id: string;
+        order_no: number;
+        block_type: "section" | "member" | "call" | "note" | "other";
+        performer_label: string | null;
+        section_label: string | null;
+        body_markdown: string;
+        note: string | null;
+        members: PublicMember[];
+    }[];
     members: PublicMember[];
     parts: PublicSongPart[];
     section_index: {

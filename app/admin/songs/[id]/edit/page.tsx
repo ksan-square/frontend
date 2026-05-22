@@ -46,6 +46,7 @@ export default async function EditSongPage({ params }: Props) {
                 songTitle={song.title}
                 members={members}
                 initialMarkdown={markdownPage?.body_markdown ?? ""}
+                initialBlocks={payload.content_blocks}
             />
         </main>
     );

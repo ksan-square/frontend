@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
+import SongContentBlocks from "@/app/_components/song-content-blocks";
 import SongRichMarkdown from "@/app/_components/song-rich-markdown";
 import {
     DEFAULT_DESCRIPTION,
@@ -34,7 +35,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         };
     }
 
-    const bodyDescription = createDescription(payload?.markdown_page?.body_markdown, 90);
+    const blockDescription = payload?.content_blocks
+        ?.map((block) => block.section_label || block.body_markdown)
+        .join(" ");
+    const bodyDescription = createDescription(blockDescription || payload?.markdown_page?.body_markdown, 90);
     const description = joinDescriptionParts([
         song.description,
         bodyDescription,
@@ -132,8 +136,18 @@ export default async function SongDetailPage({ params }: Props) {
     const songMarkdownPage = payload.markdown_page;
     const songParts = payload.parts;
     const displayMembers = payload.members;
-    const useMarkdownPage = Boolean(songMarkdownPage?.body_markdown);
-    const sectionIndex = useMarkdownPage
+    const songContentBlocks = payload.content_blocks;
+    const useContentBlocks = songContentBlocks.length > 0;
+    const useMarkdownPage = !useContentBlocks && Boolean(songMarkdownPage?.body_markdown);
+    const sectionIndex = useContentBlocks
+        ? songContentBlocks
+              .filter((block) => block.block_type === "section" && block.section_label)
+              .map((block) => ({
+                  id: block.id,
+                  label: block.section_label ?? "",
+                  anchorId: createAnchorId(block.section_label ?? block.id),
+              }))
+        : useMarkdownPage
         ? extractMarkdownHeadings(songMarkdownPage?.body_markdown ?? "")
         : payload.section_index.map((item) => ({
               id: item.id,
@@ -185,13 +199,20 @@ export default async function SongDetailPage({ params }: Props) {
                     </div>
                 )}
 
-                {!useMarkdownPage && songParts.length === 0 && (
+                {!useContentBlocks && !useMarkdownPage && songParts.length === 0 && (
                     <div className="surface p-6 text-zinc-400 ring-1 ring-white/10">
                         まだ歌割・コールが登録されていません。
                     </div>
                 )}
 
                 <div className="space-y-3">
+                    {useContentBlocks && (
+                        <SongContentBlocks
+                            blocks={songContentBlocks}
+                            members={displayMembers}
+                        />
+                    )}
+
                     {useMarkdownPage && (
                         <article className="surface p-5 ring-1 ring-white/10 md:p-6">
                             <SongRichMarkdown
