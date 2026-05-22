@@ -125,11 +125,14 @@ function parseMarkdownToBlocks(markdown: string, members: Member[]): Block[] {
                 index += 1;
             }
             const memberNames = parseMemberNames(memberMatch[1]);
+            const selectedMembers = memberNames.includes("全員")
+                ? members
+                : members.filter((member) => memberNames.includes(member.name));
             blocks.push({
                 ...createEmptyBlock("member", blocks.length + 1),
                 performer_label: memberMatch[1].trim() || null,
                 body_markdown: bodyLines.join("\n").trim(),
-                members: members.filter((member) => memberNames.includes(member.name)),
+                members: selectedMembers,
             });
             index += 1;
             continue;
@@ -182,7 +185,17 @@ function getBlockBadge(blockType: BlockType) {
     }
 }
 
-function serializeBlocksToMarkdown(blocks: Block[]) {
+function getResolvedPerformerLabel(block: Block, allMembers: Member[]) {
+    if (block.members.length === 0) {
+        return block.performer_label?.trim() || null;
+    }
+    if (allMembers.length > 0 && block.members.length === allMembers.length) {
+        return "全員";
+    }
+    return block.members.map((member) => member.name).join("/");
+}
+
+function serializeBlocksToMarkdown(blocks: Block[], members: Member[]) {
     return reorderBlocks(blocks)
         .map((block) => {
             if (block.block_type === "section") {
@@ -190,9 +203,7 @@ function serializeBlocksToMarkdown(blocks: Block[]) {
             }
 
             if (block.block_type === "member") {
-                const performerLabel =
-                    block.performer_label?.trim()
-                    || block.members.map((member) => member.name).join("/");
+                const performerLabel = getResolvedPerformerLabel(block, members) ?? "未設定";
                 const body = block.body_markdown.trim();
                 return `[member:${performerLabel}]\n${body}\n[/member]`;
             }
@@ -216,6 +227,7 @@ function SortableBlockItem({
     onDelete,
     onUpdate,
     onToggleMember,
+    onToggleAllMembers,
 }: {
     block: Block;
     members: Member[];
@@ -225,6 +237,7 @@ function SortableBlockItem({
     onDelete: (id: string) => void;
     onUpdate: (id: string, patch: Partial<Block>) => void;
     onToggleMember: (blockId: string, member: Member) => void;
+    onToggleAllMembers: (blockId: string) => void;
 }) {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: block.id });
     const style = {
@@ -326,12 +339,18 @@ function SortableBlockItem({
 
                     {block.block_type === "member" && (
                         <div className="space-y-3">
-                            <input
-                                value={block.performer_label ?? ""}
-                                onChange={(event) => onUpdate(block.id, { performer_label: event.target.value })}
-                                placeholder="表示ラベル 例: 全員 / 詩田 / 詩田・一ノ瀬"
-                                className="w-full rounded-sm bg-zinc-950 p-3"
-                            />
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="rounded-sm bg-zinc-900 px-3 py-2 text-xs font-bold text-zinc-200">
+                                    {getResolvedPerformerLabel(block, members) ?? "タグなし"}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => onToggleAllMembers(block.id)}
+                                    className="rounded-sm bg-zinc-900 px-3 py-2 text-xs text-zinc-100 ring-1 ring-white/10 hover:bg-white hover:text-black"
+                                >
+                                    全員
+                                </button>
+                            </div>
                             <div className="flex flex-wrap gap-2">
                                 {members.map((member) => {
                                     const checked = block.members.some((item) => item.id === member.id);
@@ -391,7 +410,7 @@ export default function SongMarkdownEditor({
         initialBlocks.length > 0 ? initialBlocks : parseMarkdownToBlocks(initialMarkdown, members),
     );
     const [markdownBody, setMarkdownBody] = useState(
-        initialMarkdown || serializeBlocksToMarkdown(initialBlocks),
+        initialMarkdown || serializeBlocksToMarkdown(initialBlocks, members),
     );
     const [message, setMessage] = useState("");
     const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
@@ -415,6 +434,23 @@ export default function SongMarkdownEditor({
                     members: exists
                         ? block.members.filter((item) => item.id !== member.id)
                         : [...block.members, member],
+                    performer_label: null,
+                };
+            }),
+        );
+    }
+
+    function toggleAllMembers(blockId: string) {
+        setBlocks((current) =>
+            current.map((block) => {
+                if (block.id !== blockId) {
+                    return block;
+                }
+                const nextMembers = block.members.length === members.length ? [] : members;
+                return {
+                    ...block,
+                    members: nextMembers,
+                    performer_label: null,
                 };
             }),
         );
@@ -461,7 +497,7 @@ export default function SongMarkdownEditor({
     }
 
     function switchToMarkdown() {
-        setMarkdownBody(serializeBlocksToMarkdown(blocks));
+        setMarkdownBody(serializeBlocksToMarkdown(blocks, members));
         setMode("markdown");
     }
 
@@ -479,7 +515,7 @@ export default function SongMarkdownEditor({
         const nextMarkdown =
             mode === "markdown"
                 ? markdownBody
-                : serializeBlocksToMarkdown(nextBlocks);
+                : serializeBlocksToMarkdown(nextBlocks, members);
 
         try {
             await saveSongContentBlocks(
@@ -488,7 +524,10 @@ export default function SongMarkdownEditor({
                     id: block.id.startsWith("block-") ? null : block.id,
                     block_type: block.block_type,
                     order_no: index + 1,
-                    performer_label: block.block_type === "member" ? (block.performer_label?.trim() || null) : null,
+                    performer_label:
+                        block.block_type === "member"
+                            ? (getResolvedPerformerLabel(block, members) || null)
+                            : null,
                     section_label: block.block_type === "section" ? (block.section_label?.trim() || null) : null,
                     body_markdown: block.body_markdown,
                     note: block.note?.trim() || null,
@@ -592,6 +631,7 @@ export default function SongMarkdownEditor({
                                         onDelete={deleteBlock}
                                         onUpdate={updateBlock}
                                         onToggleMember={toggleMember}
+                                        onToggleAllMembers={toggleAllMembers}
                                     />
                                 ))}
                             </div>
