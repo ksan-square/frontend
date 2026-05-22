@@ -3,6 +3,7 @@
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { getClientSiteUrl } from "@/lib/site-url";
 import { showToast } from "@/lib/toast";
 
 function normalizeRedirect(path: string | null) {
@@ -19,6 +20,7 @@ export default function LoginForm() {
     const authError = searchParams.get("error");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isOAuthSubmitting, setIsOAuthSubmitting] = useState(false);
 
@@ -32,6 +34,7 @@ export default function LoginForm() {
             const payload = {
                 ...detail,
                 origin: typeof window !== "undefined" ? window.location.origin : null,
+                siteUrl: getClientSiteUrl(),
                 redirectedFrom,
                 supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? null,
                 supabaseKeyPrefix:
@@ -86,6 +89,17 @@ export default function LoginForm() {
         event.preventDefault();
         setIsSubmitting(true);
 
+        logAuthDebug("password_login_input_diagnostics", {
+            email,
+            emailLength: email.length,
+            trimmedEmailLength: email.trim().length,
+            emailHasLeadingOrTrailingWhitespace: email !== email.trim(),
+            emailIsLowercase: email === email.toLowerCase(),
+            normalizedEmail: email.trim().toLowerCase(),
+            passwordLength: password.length,
+            passwordHasLeadingOrTrailingWhitespace: password !== password.trim(),
+        });
+
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
@@ -131,7 +145,7 @@ export default function LoginForm() {
 
     async function handleXLogin() {
         setIsOAuthSubmitting(true);
-        const callbackTarget = new URL("/auth/callback", window.location.origin);
+        const callbackTarget = new URL("/auth/callback", getClientSiteUrl());
         callbackTarget.searchParams.set("next", redirectedFrom);
 
         const { error } = await supabase.auth.signInWithOAuth({
@@ -201,12 +215,19 @@ export default function LoginForm() {
                     </label>
                     <input
                         className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none transition focus:border-pink-400"
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
                         required
                     />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword((current) => !current)}
+                        className="text-xs font-semibold text-zinc-400 transition hover:text-white"
+                    >
+                        {showPassword ? "パスワードを隠す" : "パスワードを表示"}
+                    </button>
                 </div>
 
                 <button

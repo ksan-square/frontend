@@ -3,6 +3,7 @@
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { getClientSiteUrl } from "@/lib/site-url";
 import { showToast } from "@/lib/toast";
 
 type PortalIdentity = {
@@ -134,7 +135,7 @@ export default function AccountLinkingPanel({ initialIdentities }: Props) {
     async function handleLinkProvider(provider: (typeof OAUTH_LINK_PROVIDERS)[number]["provider"]) {
         setIsLinkingProvider(provider);
 
-        const redirectTo = new URL("/auth/callback", window.location.origin);
+        const redirectTo = new URL("/auth/callback", getClientSiteUrl());
         redirectTo.searchParams.set("next", "/portal");
 
         const { error } = await supabase.auth.linkIdentity({
@@ -175,7 +176,7 @@ export default function AccountLinkingPanel({ initialIdentities }: Props) {
 
         setIsSubmittingEmail(true);
 
-        const redirectTo = `${window.location.origin}/portal`;
+        const redirectTo = `${getClientSiteUrl()}/portal`;
         const { error } = await supabase.auth.updateUser(
             {
                 email: email.trim(),
