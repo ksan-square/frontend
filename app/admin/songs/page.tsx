@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import Pagination from "@/app/_components/pagination";
-import { supabase } from "@/lib/supabase";
+import { createPathWithQuery, getPaginationRange, parsePageParam, parseTrimmedParam } from "@/lib/page-utils";
+import { getAdminSongs } from "@/lib/admin-server-api";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -14,70 +15,8 @@ type SearchParams = Promise<{
     page?: string | string[];
 }>;
 
-type SongIndexItem = {
-    key: string;
-    count: number;
-};
-
-type SongIndexRow = {
-    id: string;
-    title: string | null;
-};
-
-function firstParam(value: string | string[] | undefined) {
-    return Array.isArray(value) ? value[0] : value;
-}
-
-function parsePage(value: string | string[] | undefined) {
-    const page = Number(firstParam(value));
-
-    if (!Number.isInteger(page) || page < 1) {
-        return 1;
-    }
-
-    return page;
-}
-
-function parseInitial(value: string | string[] | undefined) {
-    const initial = firstParam(value)?.trim();
-
-    if (!initial) {
-        return null;
-    }
-
-    return Array.from(initial)[0] ?? null;
-}
-
-function getInitial(title: string | null) {
-    const normalizedTitle = title?.trim();
-
-    if (!normalizedTitle) {
-        return "#";
-    }
-
-    return Array.from(normalizedTitle)[0].toUpperCase();
-}
-
-function buildSongIndex(songs: SongIndexRow[]) {
-    const counts = new Map<string, number>();
-
-    for (const song of songs) {
-        const initial = getInitial(song.title);
-        counts.set(initial, (counts.get(initial) ?? 0) + 1);
-    }
-
-    return Array.from(counts.entries()).map<SongIndexItem>(
-        ([key, count]) => ({
-            key,
-            count,
-        }),
-    );
-}
-
 function createSongsHref(initial?: string | null) {
-    return initial
-        ? `/admin/songs?initial=${encodeURIComponent(initial)}`
-        : "/admin/songs";
+    return createPathWithQuery("/admin/songs", { initial });
 }
 
 export default async function AdminSongsPage({
@@ -86,60 +25,41 @@ export default async function AdminSongsPage({
     searchParams: SearchParams;
 }) {
     const params = await searchParams;
-    const requestedInitial = parseInitial(params.initial);
-    const requestedPage = parsePage(params.page);
+    const requestedInitial = parseTrimmedParam(params.initial);
+    const requestedPage = parsePageParam(params.page);
 
-    const { data: songIndexRows, error: songIndexError } = await supabase
-        .from("songs")
-        .select("id,title")
-        .eq("is_delete", false)
-        .order("order_no", { ascending: true });
-
-    if (songIndexError) {
-        return <main>取得失敗: {songIndexError.message}</main>;
+    let payload;
+    try {
+        payload = await getAdminSongs({
+            initial: requestedInitial,
+            page: requestedPage,
+        });
+    } catch (error) {
+        return (
+            <main>
+                取得失敗: {error instanceof Error ? error.message : "unknown error"}
+            </main>
+        );
     }
 
-    const songIndex = buildSongIndex(songIndexRows ?? []);
+    const songIndex = payload.index;
+    const songs = payload.items;
+    const totalSongs = payload.pagination.total_items;
+    const totalPages = payload.pagination.total_pages;
+    const currentPage = payload.pagination.page;
+    const { displayStart, displayEnd } = getPaginationRange({
+        currentPage,
+        pageSize: PAGE_SIZE,
+        totalItems: totalSongs,
+    });
     const selectedInitial =
         requestedInitial &&
         songIndex.some((item) => item.key === requestedInitial)
             ? requestedInitial
             : null;
-    const selectedSongIds = selectedInitial
-        ? (songIndexRows ?? [])
-              .filter((song) => getInitial(song.title) === selectedInitial)
-              .map((song) => song.id)
-        : null;
-    const totalSongs = selectedSongIds?.length ?? songIndexRows?.length ?? 0;
-    const totalPages = Math.max(Math.ceil(totalSongs / PAGE_SIZE), 1);
-    const currentPage = Math.min(requestedPage, totalPages);
-    const rangeStart = (currentPage - 1) * PAGE_SIZE;
-    const rangeEnd = rangeStart + PAGE_SIZE - 1;
-    const pageSongIds = selectedSongIds?.slice(rangeStart, rangeEnd + 1);
-
-    let songsQuery = supabase
-        .from("songs")
-        .select("id,title,slug,order_no,lyricist,composer,arranger")
-        .eq("is_delete", false)
-        .order("order_no", { ascending: true });
-
-    if (pageSongIds) {
-        songsQuery =
-            pageSongIds.length > 0
-                ? songsQuery.in("id", pageSongIds)
-                : songsQuery.eq("id", "__no_song__");
-    } else {
-        songsQuery = songsQuery.range(rangeStart, rangeEnd);
-    }
-
-    const { data: songs, error } = await songsQuery;
-
-    if (error) {
-        return <main>取得失敗: {error.message}</main>;
-    }
 
     return (
-        <main className="space-y-6">
+        <main className="space-y-10">
             <Breadcrumbs
                 items={[
                     { href: "/admin", label: "管理" },
@@ -147,23 +67,37 @@ export default async function AdminSongsPage({
                 ]}
             />
 
-            <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold">曲管理</h1>
+            <section className="relative overflow-hidden bg-black p-6 shadow-2xl shadow-black/30 ring-1 ring-white/10 md:p-8">
+                <div className="editorial-rule absolute inset-x-0 top-0 h-1" />
 
-                <Link
-                    href="/admin/songs/new"
-                    className="rounded-full bg-pink-500 px-4 py-2 font-bold"
-                >
-                    新規追加
-                </Link>
-            </div>
+                <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+                    <div>
+                        <p className="inline-flex bg-white px-3 py-1 text-xs font-black uppercase text-black">
+                            Admin / Songs
+                        </p>
+                        <h1 className="mt-5 text-4xl font-black text-white md:text-5xl">
+                            曲管理
+                        </h1>
+                        <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-300 md:text-base">
+                            曲情報、説明文、歌詞ページの元データを更新します。
+                        </p>
+                    </div>
 
-            <section className="space-y-3 rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+                    <Link
+                        href="/admin/songs/new"
+                        className="w-fit rounded-md bg-violet-500 px-5 py-3 text-sm font-black text-white hover:bg-violet-400"
+                    >
+                        新規追加
+                    </Link>
+                </div>
+            </section>
+
+            <section className="surface-subtle p-4">
                 <div className="flex flex-wrap items-center gap-2">
                     <Link
                         href="/admin/songs"
                         aria-current={!selectedInitial ? "page" : undefined}
-                        className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm aria-current:bg-pink-500 aria-current:font-bold"
+                        className="rounded-sm bg-zinc-900 px-3 py-1.5 text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black aria-current:bg-violet-500 aria-current:font-black aria-current:text-white"
                     >
                         すべて
                     </Link>
@@ -177,10 +111,10 @@ export default async function AdminSongsPage({
                                     ? "page"
                                     : undefined
                             }
-                            className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm aria-current:bg-pink-500 aria-current:font-bold"
+                            className="rounded-sm bg-zinc-900 px-3 py-1.5 text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black aria-current:bg-violet-500 aria-current:font-black aria-current:text-white"
                         >
                             {item.key}
-                            <span className="ml-1 text-xs text-zinc-300">
+                            <span className="ml-1 text-xs text-zinc-400">
                                 {item.count}
                             </span>
                         </Link>
@@ -190,36 +124,35 @@ export default async function AdminSongsPage({
 
             <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-400">
                 <p>
-                    {totalSongs}曲中 {totalSongs === 0 ? 0 : rangeStart + 1}-
-                    {Math.min(rangeEnd + 1, totalSongs)}曲を表示
+                    {totalSongs}曲中 {displayStart}-{displayEnd}曲を表示
                 </p>
 
-                {selectedInitial && (
-                    <Link
-                        href="/admin/songs"
-                        className="rounded-full bg-zinc-800 px-3 py-1.5 text-zinc-100"
-                    >
-                        頭文字選択を解除
-                    </Link>
-                )}
-            </div>
+                    {selectedInitial && (
+                        <Link
+                            href="/admin/songs"
+                            className="rounded-sm bg-zinc-900 px-3 py-1.5 text-zinc-100 ring-1 ring-white/10 hover:bg-white hover:text-black"
+                        >
+                            頭文字選択を解除
+                        </Link>
+                    )}
+                </div>
 
-            <section className="space-y-3">
-                {songs?.length === 0 && (
-                    <p className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 text-zinc-400">
+            <section className="grid gap-4">
+                {songs.length === 0 && (
+                    <p className="surface p-6 text-zinc-400 ring-1 ring-white/10">
                         曲が登録されていません。
                     </p>
                 )}
 
-                {songs?.map((song) => (
+                {songs.map((song) => (
                     <Link
                         key={song.id}
                         href={`/admin/songs/${song.id}/edit`}
-                        className="block rounded-2xl border border-zinc-800 bg-zinc-900 p-5 hover:border-pink-400"
+                        className="group block bg-[#111113] p-5 shadow-xl shadow-black/20 ring-1 ring-white/10 hover:-translate-y-0.5 hover:bg-white"
                     >
-                        <h2 className="text-xl font-bold">{song.title}</h2>
-                        <p className="mt-1 text-sm text-zinc-400">slug: {song.slug}</p>
-                        <p className="mt-2 text-sm text-zinc-400">
+                        <h2 className="text-xl font-black text-white group-hover:text-black">{song.title}</h2>
+                        <p className="mt-1 text-sm text-zinc-400 group-hover:text-zinc-700">slug: {song.slug}</p>
+                        <p className="mt-2 text-sm text-zinc-400 group-hover:text-zinc-700">
                             作詞: {song.lyricist ?? "未登録"} / 作曲: {song.composer ?? "未登録"} / 編曲: {song.arranger ?? "未登録"}
                         </p>
                     </Link>

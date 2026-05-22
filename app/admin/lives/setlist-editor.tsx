@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getCurrentUserId } from "@/lib/current-user";
-import { supabaseClient } from "@/lib/supabase-client";
+import { useCallback, useMemo, useState } from "react";
 import SortableSetlist from "./sortable-setlist";
+import {
+    addSetlistItem,
+    deleteSetlistItem,
+    getAdminLiveDetailByApi,
+    updateSetlistItem,
+} from "@/lib/admin-api";
 
 type Song = {
     id: string;
@@ -13,96 +17,166 @@ type Song = {
 type SetlistItem = {
     id: string;
     order_no: number;
+    entry_type: "song" | "talk" | "photo_time" | "other";
+    display_label: string;
+    entry_title: string | null;
     note: string | null;
-    songs: {
+    song: {
         id: string;
         title: string;
     } | null;
 };
 
+type DraftItem = {
+    entry_type: "song" | "talk" | "photo_time" | "other";
+    display_label: string;
+    entry_title: string;
+    song_id: string;
+    note: string;
+};
+
+function createEmptyDraft(nextIndex: number): DraftItem {
+    return {
+        entry_type: "song",
+        display_label: `M${nextIndex}`,
+        entry_title: "",
+        song_id: "",
+        note: "",
+    };
+}
+
+function getDefaultEntryTitle(entryType: DraftItem["entry_type"]) {
+    switch (entryType) {
+        case "talk":
+            return "MC";
+        case "photo_time":
+            return "写真撮影タイム";
+        case "other":
+            return "その他";
+        default:
+            return "";
+    }
+}
+
+function getEntryTypeLabel(entryType: DraftItem["entry_type"]) {
+    switch (entryType) {
+        case "song":
+            return "曲";
+        case "talk":
+            return "MC";
+        case "photo_time":
+            return "写真撮影タイム";
+        default:
+            return "その他";
+    }
+}
+
 export default function SetlistEditor({
-    liveId,
+    parentLiveId,
+    scheduleItemId,
     songs,
+    initialItems,
+    label,
 }: {
-    liveId: string;
+    parentLiveId: string;
+    scheduleItemId: string;
     songs: Song[];
+    initialItems: SetlistItem[];
+    label?: string;
 }) {
-    const [items, setItems] = useState<SetlistItem[]>([]);
-    const [songId, setSongId] = useState("");
-    const [note, setNote] = useState("");
+    const [items, setItems] = useState<SetlistItem[]>(initialItems);
+    const [draft, setDraft] = useState<DraftItem>(createEmptyDraft(initialItems.length + 1));
     const [message, setMessage] = useState("");
 
-    async function fetchSetlist() {
-        const { data } = await supabaseClient
-            .from("setlist_items")
-            .select(`
-                id,
-                order_no,
-                note,
-                songs (
-                    id,
-                    title,
-                    is_delete
-                )
-            `)
-            .eq("live_id", liveId)
-            .eq("is_delete", false)
-            .order("order_no");
+    const nextDraftIndex = useMemo(() => items.length + 1, [items.length]);
 
-        setItems((data ?? []) as unknown as SetlistItem[]);
-    }
-
-    useEffect(() => {
-        fetchSetlist();
-    }, []);
+    const fetchSetlist = useCallback(async () => {
+        try {
+            const payload = await getAdminLiveDetailByApi(parentLiveId);
+            const targetItem = payload.live?.schedule_items.find((item) => item.id === scheduleItemId);
+            const nextItems = (targetItem?.setlist_items ?? []).map((item) => ({
+                id: item.id,
+                order_no: item.order_no,
+                entry_type: item.entry_type as SetlistItem["entry_type"],
+                display_label: item.display_label,
+                entry_title: item.entry_title,
+                note: item.note,
+                song: item.song
+                    ? {
+                          id: item.song.id,
+                          title: item.song.title,
+                      }
+                    : null,
+            }));
+            setItems(nextItems);
+            setDraft((current) => {
+                const fallback = createEmptyDraft(nextItems.length + 1);
+                return current.display_label ? current : fallback;
+            });
+            setMessage("");
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : "取得失敗");
+        }
+    }, [parentLiveId, scheduleItemId]);
 
     async function handleAdd() {
-        if (!songId) {
+        if (!draft.display_label.trim()) {
+            setMessage("表示番号を入力してください。");
+            return;
+        }
+        if (draft.entry_type === "song" && !draft.song_id) {
+            setMessage("曲を選択してください。");
             return;
         }
 
-        const userId = await getCurrentUserId();
-        const nextOrder =
-            items.length > 0
-                ? Math.max(...items.map((v) => v.order_no)) + 1
-                : 1;
-
-        const { error } = await supabaseClient
-            .from("setlist_items")
-            .insert({
-                live_id: liveId,
-                song_id: songId,
-                order_no: nextOrder,
-                note: note || null,
-                is_delete: false,
-                created_user: userId,
-                updated_user: userId,
+        try {
+            await addSetlistItem(scheduleItemId, {
+                entry_type: draft.entry_type,
+                display_label: draft.display_label.trim(),
+                entry_title: draft.entry_type === "song" ? null : (draft.entry_title.trim() || null),
+                song_id: draft.entry_type === "song" ? draft.song_id : null,
+                note: draft.note.trim() || null,
             });
-
-        if (error) {
-            setMessage(error.message);
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : "追加失敗");
             return;
         }
 
-        setSongId("");
-        setNote("");
-
+        setDraft(createEmptyDraft(nextDraftIndex + 1));
         await fetchSetlist();
     }
 
     async function handleDelete(id: string) {
-        const userId = await getCurrentUserId();
-        const { error } = await supabaseClient
-            .from("setlist_items")
-            .update({
-                is_delete: true,
-                updated_user: userId,
-            })
-            .eq("id", id)
-            .eq("is_delete", false);
+        try {
+            await deleteSetlistItem(id);
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : "削除失敗");
+            return;
+        }
 
-        if (error) {
-            setMessage(error.message);
+        await fetchSetlist();
+    }
+
+    async function handleUpdate(item: SetlistItem, values: DraftItem) {
+        if (!values.display_label.trim()) {
+            setMessage("表示番号を入力してください。");
+            return;
+        }
+        if (values.entry_type === "song" && !values.song_id) {
+            setMessage("曲を選択してください。");
+            return;
+        }
+
+        try {
+            await updateSetlistItem(item.id, {
+                entry_type: values.entry_type,
+                display_label: values.display_label.trim(),
+                entry_title: values.entry_type === "song" ? null : (values.entry_title.trim() || null),
+                song_id: values.entry_type === "song" ? values.song_id : null,
+                note: values.note.trim() || null,
+            });
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : "更新失敗");
             return;
         }
 
@@ -113,46 +187,83 @@ export default function SetlistEditor({
         <section className="space-y-6 rounded-3xl border border-zinc-800 bg-zinc-900 p-6">
             <div>
                 <h2 className="text-2xl font-bold">
-                    セトリ編集
+                    {label ? `${label} のセトリ編集` : "セトリ編集"}
                 </h2>
 
                 <p className="mt-2 text-sm text-zinc-400">
-                    曲追加・並び替え・削除を行える。
+                    `M1`、`MC1`、`E1` のような表示番号と、曲以外の進行項目を登録できます。
                 </p>
             </div>
 
             <div className="space-y-3 rounded-2xl border border-zinc-800 p-4">
-                <select
-                    value={songId}
-                    onChange={(e) => setSongId(e.target.value)}
-                    className="w-full rounded-xl bg-zinc-950 p-3"
-                >
-                    <option value="">
-                        曲を選択
-                    </option>
+                <div className="grid gap-3 md:grid-cols-2">
+                    <select
+                        value={draft.entry_type}
+                        onChange={(event) =>
+                            setDraft((current) => {
+                                const nextEntryType = event.target.value as DraftItem["entry_type"];
+                                const shouldResetEntryTitle =
+                                    current.entry_type === "song" || !current.entry_title.trim();
 
-                    {songs.map((song) => (
-                        <option
-                            key={song.id}
-                            value={song.id}
+                                return {
+                                    ...current,
+                                    entry_type: nextEntryType,
+                                    entry_title: shouldResetEntryTitle
+                                        ? getDefaultEntryTitle(nextEntryType)
+                                        : current.entry_title,
+                                };
+                            })
+                        }
+                        className="w-full rounded-xl bg-zinc-950 p-3"
+                    >
+                        <option value="song">曲</option>
+                        <option value="talk">MC</option>
+                        <option value="photo_time">写真撮影タイム</option>
+                        <option value="other">その他</option>
+                    </select>
+
+                    <input
+                        value={draft.display_label}
+                        onChange={(event) => setDraft((current) => ({ ...current, display_label: event.target.value }))}
+                        placeholder="表示番号 例: M1 / MC1 / E1"
+                        className="w-full rounded-xl bg-zinc-950 p-3"
+                    />
+
+                    {draft.entry_type === "song" ? (
+                        <select
+                            value={draft.song_id}
+                            onChange={(event) => setDraft((current) => ({ ...current, song_id: event.target.value }))}
+                            className="w-full rounded-xl bg-zinc-950 p-3 md:col-span-2"
                         >
-                            {song.title}
-                        </option>
-                    ))}
-                </select>
+                            <option value="">曲を選択</option>
+                            {songs.map((song) => (
+                                <option key={song.id} value={song.id}>
+                                    {song.title}
+                                </option>
+                            ))}
+                        </select>
+                    ) : (
+                        <input
+                            value={draft.entry_title}
+                            onChange={(event) => setDraft((current) => ({ ...current, entry_title: event.target.value }))}
+                            placeholder={`${getEntryTypeLabel(draft.entry_type)}の表示名。空ならラベルだけ表示`}
+                            className="w-full rounded-xl bg-zinc-950 p-3 md:col-span-2"
+                        />
+                    )}
 
-                <input
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    placeholder="メモ"
-                    className="w-full rounded-xl bg-zinc-950 p-3"
-                />
+                    <input
+                        value={draft.note}
+                        onChange={(event) => setDraft((current) => ({ ...current, note: event.target.value }))}
+                        placeholder="メモ"
+                        className="w-full rounded-xl bg-zinc-950 p-3 md:col-span-2"
+                    />
+                </div>
 
                 <button
                     onClick={handleAdd}
                     className="rounded-full bg-pink-500 px-5 py-3 font-bold"
                 >
-                    セトリ追加
+                    項目を追加
                 </button>
 
                 {message && (
@@ -163,9 +274,21 @@ export default function SetlistEditor({
             </div>
 
             <SortableSetlist
+                key={JSON.stringify(items.map((item) => ({
+                    id: item.id,
+                    order_no: item.order_no,
+                    entry_type: item.entry_type,
+                    display_label: item.display_label,
+                    entry_title: item.entry_title,
+                    note: item.note,
+                    songId: item.song?.id ?? null,
+                })))}
                 items={items}
+                songs={songs}
                 onDelete={handleDelete}
+                onUpdate={handleUpdate}
                 onError={setMessage}
+                liveId={scheduleItemId}
             />
         </section>
     );

@@ -1,16 +1,17 @@
-import { supabase } from "@/lib/supabase";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import LiveForm from "./live-form";
 import Link from "next/link";
+import { getAdminVenues } from "@/lib/admin-server-api";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewLivePage() {
-    const { data: venues } = await supabase
-        .from("venues")
-        .select("id,name,area")
-        .order("name");
-
+    const venuePayload = await getAdminVenues();
+    const venues = venuePayload.items.map((venue) => ({
+        id: venue.id,
+        name: venue.name,
+        area: venue.area,
+    }));
     return (
         <main className="space-y-6">
             <Breadcrumbs
@@ -28,9 +29,7 @@ export default async function NewLivePage() {
                 ライブ追加
             </h1>
 
-            <LiveForm
-                venues={venues ?? []}
-            />
+            <LiveForm venues={venues} />
         </main>
     );
 }

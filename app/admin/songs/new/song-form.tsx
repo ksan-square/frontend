@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { getCurrentUserId } from "@/lib/current-user";
 import { useRouter } from "next/navigation";
+import { createSong } from "@/lib/admin-api";
 
 export default function SongForm() {
     const router = useRouter();
     const [title, setTitle] = useState("");
     const [slug, setSlug] = useState("");
+    const [songIndex, setSongIndex] = useState("");
     const [orderNo, setOrderNo] = useState(1);
     const [description, setDescription] = useState("");
     const [releaseDate, setReleaseDate] = useState("");
@@ -19,41 +19,34 @@ export default function SongForm() {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        const userId = await getCurrentUserId();
-
-        const { data, error } = await supabase
-            .from("songs")
-            .insert({
+        try {
+            const data = await createSong({
                 title,
                 slug,
+                song_index: songIndex,
                 order_no: orderNo,
                 description: description || null,
                 release_date: releaseDate || null,
                 lyricist: lyricist || null,
                 composer: composer || null,
                 arranger: arranger || null,
-                is_delete: false,
-                created_user: userId,
-                updated_user: userId,
-            })
-            .select("id")
-            .single();
-
-        if (error || !data) {
-            alert(`登録失敗: ${error.message}`);
-            setMessage(`登録失敗: ${error.message}`);
+            });
+            alert("曲を登録しました。");
+            router.refresh();
+            router.push(`/admin/songs/${data.id}/edit`);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "登録失敗";
+            alert(`登録失敗: ${message}`);
+            setMessage(`登録失敗: ${message}`);
             return;
         }
-
-        alert("曲を登録しました。");
-        router.refresh();
-        router.push(`/admin/songs/${data.id}/edit`);
     }
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
             <input className="w-full rounded-xl bg-zinc-950 p-3" placeholder="曲名" value={title} onChange={(e) => setTitle(e.target.value)} />
             <input className="w-full rounded-xl bg-zinc-950 p-3" placeholder="slug 例: natsu-no-ookami" value={slug} onChange={(e) => setSlug(e.target.value)} />
+            <input className="w-full rounded-xl bg-zinc-950 p-3" placeholder="一覧インデックス 例: あ / A / 数字" value={songIndex} onChange={(e) => setSongIndex(e.target.value)} />
             <input className="w-full rounded-xl bg-zinc-950 p-3" type="number" min={1} placeholder="表示順" value={orderNo} onChange={(e) => setOrderNo(Number(e.target.value))} />
             <input className="w-full rounded-xl bg-zinc-950 p-3" type="date" value={releaseDate} onChange={(e) => setReleaseDate(e.target.value)} />
 

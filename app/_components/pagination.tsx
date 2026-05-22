@@ -16,10 +16,12 @@ function createHref({
     basePath,
     query,
     page,
+    pageParamName,
 }: {
     basePath: string;
     query?: Record<string, string | null | undefined>;
     page?: number;
+    pageParamName?: string;
 }) {
     const params = new URLSearchParams();
 
@@ -30,7 +32,7 @@ function createHref({
     }
 
     if (page && page > 1) {
-        params.set("page", String(page));
+        params.set(pageParamName ?? "page", String(page));
     }
 
     const search = params.toString();
@@ -43,11 +45,13 @@ export default function Pagination({
     currentPage,
     totalPages,
     query,
+    pageParamName,
 }: {
     basePath: string;
     currentPage: number;
     totalPages: number;
     query?: Record<string, string | null | undefined>;
+    pageParamName?: string;
 }) {
     if (totalPages <= 1) {
         return null;
@@ -65,9 +69,10 @@ export default function Pagination({
                     basePath,
                     query,
                     page: Math.max(currentPage - 1, 1),
+                    pageParamName,
                 })}
                 aria-disabled={currentPage === 1}
-                className="rounded-full bg-zinc-800 px-4 py-2 text-sm aria-disabled:pointer-events-none aria-disabled:opacity-40"
+                className="rounded-sm bg-zinc-900 px-4 py-2 text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black aria-disabled:pointer-events-none aria-disabled:opacity-40"
             >
                 前へ
             </Link>
@@ -90,11 +95,12 @@ export default function Pagination({
                                 basePath,
                                 query,
                                 page,
+                                pageParamName,
                             })}
                             aria-current={
                                 page === currentPage ? "page" : undefined
                             }
-                            className="min-w-10 rounded-full bg-zinc-800 px-3 py-2 text-center text-sm aria-current:bg-pink-500 aria-current:font-bold"
+                            className="min-w-10 rounded-sm bg-zinc-900 px-3 py-2 text-center text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black aria-current:bg-violet-500 aria-current:font-black aria-current:text-white"
                         >
                             {page}
                         </Link>
@@ -107,9 +113,10 @@ export default function Pagination({
                     basePath,
                     query,
                     page: Math.min(currentPage + 1, totalPages),
+                    pageParamName,
                 })}
                 aria-disabled={currentPage === totalPages}
-                className="rounded-full bg-zinc-800 px-4 py-2 text-sm aria-disabled:pointer-events-none aria-disabled:opacity-40"
+                className="rounded-sm bg-zinc-900 px-4 py-2 text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black aria-disabled:pointer-events-none aria-disabled:opacity-40"
             >
                 次へ
             </Link>

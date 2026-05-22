@@ -7,6 +7,7 @@ import {
     createDescription,
     joinDescriptionParts,
 } from "@/lib/seo";
+import { getPublicWikiPageDetail } from "@/lib/public-api";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import CommentForm from "./comment-form";
 import DeleteCommentButton from "./delete-comment-button";
@@ -19,22 +20,14 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { slug } = await params;
-    const authClient = await createSupabaseServerClient();
-    const {
-        data: { user },
-    } = await authClient.auth.getUser();
-
-    let query = authClient
-        .from("wiki_pages")
-        .select("title,slug,body_markdown,is_published,updated_at")
-        .eq("slug", slug)
-        .eq("is_delete", false);
-
-    if (!user) {
-        query = query.eq("is_published", true);
+    let payload;
+    try {
+        payload = await getPublicWikiPageDetail(slug);
+    } catch {
+        payload = null;
     }
 
-    const { data: page } = await query.maybeSingle();
+    const page = payload?.page;
 
     if (!page) {
         return {
@@ -88,39 +81,50 @@ export default async function WikiDetailPage({ params }: Props) {
     const {
         data: { user },
     } = await authClient.auth.getUser();
-
-    let query = authClient
-        .from("wiki_pages")
-        .select("id,title,slug,body_markdown,is_published,updated_at")
-        .eq("slug", slug)
-        .eq("is_delete", false);
-
-    if (!user) {
-        query = query.eq("is_published", true);
+    let payload;
+    try {
+        payload = await getPublicWikiPageDetail(slug);
+    } catch (error) {
+        return (
+            <main>
+                Wikiページの取得に失敗しました:{" "}
+                {error instanceof Error ? error.message : "unknown error"}
+            </main>
+        );
     }
 
-    const { data: page, error } = await query.single();
-
-    if (error || !page) {
-        return <main>Wikiページが見つかりませんでした。</main>;
+    if (!payload.found || !payload.page) {
+        return (
+            <main className="space-y-8">
+                <Breadcrumbs
+                    items={[
+                        { href: "/wiki", label: "Wiki" },
+                        { label: "Wikiページが見つかりません" },
+                    ]}
+                />
+                <section className="surface p-6 ring-1 ring-white/10 md:p-8">
+                    <h1 className="text-3xl font-black text-white">
+                        Wikiページが見つかりません
+                    </h1>
+                    <p className="mt-3 text-sm leading-7 text-zinc-400">
+                        指定されたページは未登録か、現在は公開されていません。
+                    </p>
+                    <Link
+                        href="/wiki"
+                        className="mt-5 inline-flex rounded-sm bg-white px-4 py-2 text-sm font-black text-black hover:bg-zinc-200"
+                    >
+                        Wiki一覧へ戻る
+                    </Link>
+                </section>
+            </main>
+        );
     }
 
-    const wikiPage = page as WikiPage;
-    const { data: comments, error: commentsError } = await authClient
-        .from("wiki_comments")
-        .select("id,nickname,body,created_at")
-        .eq("wiki_page_id", wikiPage.id)
-        .eq("is_delete", false)
-        .order("created_at", { ascending: true });
-
-    if (commentsError) {
-        return <main>コメントの取得に失敗しました: {commentsError.message}</main>;
-    }
-
-    const wikiComments = (comments ?? []) as WikiComment[];
+    const wikiPage = payload.page as WikiPage;
+    const wikiComments = payload.comments as WikiComment[];
 
     return (
-        <main className="space-y-8">
+        <main className="space-y-10">
             <Breadcrumbs
                 items={[
                     { href: "/wiki", label: "Wiki" },
@@ -128,21 +132,22 @@ export default async function WikiDetailPage({ params }: Props) {
                 ]}
             />
 
-            <section className="flex flex-wrap items-start justify-between gap-4 rounded-3xl border border-zinc-800 bg-zinc-900 p-6">
+            <section className="relative flex flex-wrap items-start justify-between gap-4 overflow-hidden bg-black p-6 shadow-2xl shadow-black/30 ring-1 ring-white/10 md:p-8">
+                <div className="editorial-rule absolute inset-x-0 top-0 h-1" />
                 <div>
                     <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-semibold text-pink-300">
+                        <p className="inline-flex bg-white px-3 py-1 text-xs font-black uppercase text-black">
                             Wiki
                         </p>
 
                         {!wikiPage.is_published && (
-                            <span className="rounded-full bg-zinc-800 px-2 py-1 text-xs text-zinc-300">
+                            <span className="rounded-sm bg-violet-500/15 px-2 py-1 text-xs font-bold text-fuchsia-200 ring-1 ring-violet-300/20">
                                 下書き
                             </span>
                         )}
                     </div>
 
-                    <h1 className="mt-2 text-3xl font-bold">
+                    <h1 className="mt-5 text-4xl font-black leading-tight text-white md:text-5xl">
                         {wikiPage.title}
                     </h1>
                     <p className="mt-3 text-sm text-zinc-400">
@@ -156,20 +161,20 @@ export default async function WikiDetailPage({ params }: Props) {
                 {user && (
                     <Link
                         href={`/wiki/${wikiPage.slug}/edit`}
-                        className="rounded-full bg-zinc-800 px-4 py-2 font-bold hover:bg-pink-500"
+                        className="rounded-md bg-zinc-900 px-4 py-2 font-black text-white ring-1 ring-white/10 hover:bg-white hover:text-black"
                     >
                         編集
                     </Link>
                 )}
             </section>
 
-            <article className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6">
+            <article className="surface p-6 ring-1 ring-white/10 md:p-8">
                 <RichMarkdown markdown={wikiPage.body_markdown} />
             </article>
 
             <section className="space-y-4">
                 <div>
-                    <h2 className="text-2xl font-bold">コメント</h2>
+                    <h2 className="text-3xl font-black text-white">コメント</h2>
                     <p className="mt-2 text-sm text-zinc-400">
                         ニックネームで誰でも投稿できます。
                     </p>
@@ -179,7 +184,7 @@ export default async function WikiDetailPage({ params }: Props) {
 
                 <div className="space-y-3">
                     {wikiComments.length === 0 && (
-                        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 text-zinc-400">
+                        <div className="surface p-5 text-zinc-400 ring-1 ring-white/10">
                             まだコメントはありません。
                         </div>
                     )}
@@ -187,11 +192,11 @@ export default async function WikiDetailPage({ params }: Props) {
                     {wikiComments.map((comment) => (
                         <article
                             key={comment.id}
-                            className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5"
+                            className="surface-subtle p-5"
                         >
                             <div className="flex flex-wrap items-start justify-between gap-3">
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <h3 className="font-bold text-pink-200">
+                                    <h3 className="font-black text-fuchsia-200">
                                         {comment.nickname}
                                     </h3>
                                     <p className="text-xs text-zinc-500">

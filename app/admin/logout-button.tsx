@@ -13,14 +13,14 @@ export default function LogoutButton() {
 
     async function handleLogout() {
         await supabase.auth.signOut();
-        router.push("/admin/login");
+        router.push("/login");
         router.refresh();
     }
 
     return (
         <button
             onClick={handleLogout}
-            className="rounded-full border border-zinc-700 px-4 py-2 text-sm font-bold"
+            className="rounded-sm bg-zinc-900 px-4 py-2 text-sm font-semibold text-zinc-100 ring-1 ring-white/10 hover:bg-white hover:text-black"
         >
             ログアウト
         </button>

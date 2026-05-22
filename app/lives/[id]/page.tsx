@@ -1,15 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
+import { formatTime, getTodayInTokyo } from "@/lib/date-time";
+import { getPrimaryVenue, getScheduleSummaryLines } from "@/lib/live-utils";
 import { DEFAULT_DESCRIPTION, createDescription, joinDescriptionParts } from "@/lib/seo";
-import { supabase } from "@/lib/supabase";
-import type { Live, SetlistItem } from "@/types";
+import { getPublicLiveDetail } from "@/lib/public-api";
 
 export const dynamic = "force-dynamic";
-
-function formatTime(time: string | null) {
-    return time ? time.slice(0, 5) : null;
-}
 
 type Props = {
     params: Promise<{ id: string }>;
@@ -17,25 +14,14 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { id } = await params;
+    let payload;
+    try {
+        payload = await getPublicLiveDetail(id);
+    } catch {
+        payload = null;
+    }
 
-    const { data: liveData } = await supabase
-        .from("lives")
-        .select(`
-            id,
-            live_date,
-            live_start_time,
-            live_end_time,
-            benefit_meeting_time_note,
-            event_name,
-            memo,
-            venues!lives_venue_id_fkey (
-                name,
-                area
-            )
-        `)
-        .eq("id", id)
-        .eq("is_delete", false)
-        .maybeSingle();
+    const liveData = payload?.live;
 
     if (!liveData) {
         return {
@@ -44,20 +30,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         };
     }
 
-    const venue = Array.isArray(liveData.venues)
-        ? liveData.venues[0]
-        : liveData.venues;
-    const liveTimeText = liveData.live_start_time
-        ? liveData.live_end_time
-            ? `${formatTime(liveData.live_start_time)}-${formatTime(liveData.live_end_time)}`
-            : `${formatTime(liveData.live_start_time)} 開演`
+    const primaryVenue = getPrimaryVenue(liveData);
+    const liveTimeText = liveData.start_time
+        ? liveData.end_time
+            ? `${formatTime(liveData.start_time)}-${formatTime(liveData.end_time)}`
+            : formatTime(liveData.start_time)
         : null;
     const description = joinDescriptionParts([
         liveData.live_date,
         liveTimeText,
-        venue?.name,
-        venue?.area,
-        liveData.benefit_meeting_time_note,
+        primaryVenue?.name,
+        primaryVenue?.area,
+        getScheduleSummaryLines(liveData).map((line) => `${line.label}: ${line.timeText}`).join(" / "),
         createDescription(liveData.memo, 80),
     ]);
 
@@ -81,103 +65,58 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function LiveDetailPage({ params }: Props) {
     const { id } = await params;
-    const today = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Asia/Tokyo",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-    }).format(new Date());
-
-    const { data: liveData, error: liveError } = await supabase
-        .from("lives")
-        .select(`
-            id,
-            live_date,
-            same_day_order,
-            live_start_time,
-            live_end_time,
-            benefit_meeting_start_time,
-            benefit_meeting_end_time,
-            benefit_meeting_time_note,
-            benefit_meeting_place_detail,
-            ticket_url,
-            official_x_url,
-            event_name,
-            memo,
-            venues!lives_venue_id_fkey (
-                id,
-                name,
-                area,
-                google_map_url
-            ),
-            benefit_venue:venues!lives_benefit_venue_id_fkey (
-                id,
-                name,
-                area,
-                google_map_url
-            )
-        `)
-        .eq("id", id)
-        .eq("is_delete", false)
-        .single();
-
-    if (liveError || !liveData) {
-        return <main>ライブが見つかりませんでした。</main>;
-    }
-
-    const live = liveData as unknown as Live;
-
-    const venue = live.venues;
-    const benefitVenue = live.benefit_venue ?? venue;
-    const isUpcoming = live.live_date >= today;
-    const liveStartTime = formatTime(live.live_start_time);
-    const liveEndTime = formatTime(live.live_end_time);
-    const benefitStartTime = formatTime(live.benefit_meeting_start_time);
-    const benefitEndTime = formatTime(live.benefit_meeting_end_time);
-    const benefitPlaceText = benefitVenue?.name
-        ? `${benefitVenue.name}${benefitVenue.area ? ` / ${benefitVenue.area}` : ""}${live.benefit_meeting_place_detail ? ` / ${live.benefit_meeting_place_detail}` : ""}`
-        : live.benefit_meeting_place_detail ?? "会場未定";
-    const liveTimeText = liveStartTime
-        ? liveEndTime
-            ? `${liveStartTime}-${liveEndTime}`
-            : `${liveStartTime} 開演`
-        : "時間未定";
-    const benefitTimeText = live.benefit_meeting_time_note
-        ? live.benefit_meeting_time_note
-        : benefitStartTime
-        ? benefitEndTime
-            ? `${benefitStartTime}-${benefitEndTime}`
-            : `${benefitStartTime} 開始予定`
-        : "未定";
-
-    const { data: setlist, error: setlistError } = await supabase
-        .from("setlist_items")
-        .select(`
-            id,
-            order_no,
-            note,
-            songs (
-                title,
-                slug,
-                is_delete
-            )
-        `)
-        .eq("live_id", id)
-        .eq("is_delete", false)
-        .order("order_no");
-
-    if (setlistError) {
+    const today = getTodayInTokyo();
+    let payload;
+    try {
+        payload = await getPublicLiveDetail(id);
+    } catch (error) {
         return (
             <main>
-                セトリの取得に失敗しました: {setlistError.message}
+                ライブの取得に失敗しました:{" "}
+                {error instanceof Error ? error.message : "unknown error"}
             </main>
         );
     }
 
-    const items = (setlist ?? []) as SetlistItem[];
+    if (!payload.found || !payload.live) {
+        return (
+            <main className="space-y-8">
+                <Breadcrumbs
+                    items={[
+                        { href: "/lives", label: "ライブ" },
+                        { label: "ライブが見つかりません" },
+                    ]}
+                />
+                <section className="surface p-6 ring-1 ring-white/10 md:p-8">
+                    <h1 className="text-3xl font-black text-white">
+                        ライブが見つかりません
+                    </h1>
+                    <p className="mt-3 text-sm leading-7 text-zinc-400">
+                        指定されたライブは未登録か、現在は公開されていません。
+                    </p>
+                    <Link
+                        href="/lives"
+                        className="mt-5 inline-flex rounded-sm bg-white px-4 py-2 text-sm font-black text-black hover:bg-zinc-200"
+                    >
+                        ライブ一覧へ戻る
+                    </Link>
+                </section>
+            </main>
+        );
+    }
+
+    const live = payload.live;
+    const venue = getPrimaryVenue(live);
+    const scheduleLines = getScheduleSummaryLines(live);
+    const isUpcoming = live.live_date >= today;
+    const liveTimeText = live.start_time
+        ? live.end_time
+            ? `${formatTime(live.start_time)}-${formatTime(live.end_time)}`
+            : formatTime(live.start_time)
+        : "時間未定";
 
     return (
-        <main className="space-y-8">
+        <main className="space-y-10">
             <Breadcrumbs
                 items={[
                     { href: "/lives", label: "ライブ" },
@@ -185,21 +124,22 @@ export default async function LiveDetailPage({ params }: Props) {
                 ]}
             />
 
-            <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6">
-                <p className="text-sm font-semibold text-pink-300">
+            <section className="relative overflow-hidden bg-black p-6 shadow-2xl shadow-black/30 ring-1 ring-white/10 md:p-8">
+                <div className="editorial-rule absolute inset-x-0 top-0 h-1" />
+                <p className="inline-flex bg-white px-3 py-1 text-xs font-black uppercase text-black">
                     {isUpcoming ? "次回予定" : live.live_date}
                 </p>
 
-                <h1 className="mt-2 text-3xl font-bold">
+                <h1 className="mt-5 text-4xl font-black leading-tight text-white md:text-5xl">
                     {live.event_name}
                 </h1>
 
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
-                    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                            ライブ予定
+                    <div className="surface-subtle p-4">
+                        <p className="text-xs font-black uppercase tracking-wide text-fuchsia-300">
+                            イベント
                         </p>
-                        <p className="mt-2 text-lg font-bold">
+                        <p className="mt-2 text-lg font-black text-white">
                             {live.live_date}
                         </p>
                         <p className="mt-1 text-sm text-zinc-400">
@@ -208,19 +148,23 @@ export default async function LiveDetailPage({ params }: Props) {
                         <p className="mt-3 text-sm text-zinc-300">
                             {venue?.name ?? "会場未登録"}
                             {venue?.area && ` / ${venue.area}`}
+                            {live.place_detail && ` / ${live.place_detail}`}
                         </p>
                     </div>
 
-                    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                            特典会
+                    <div className="surface-subtle p-4">
+                        <p className="text-xs font-black uppercase tracking-wide text-fuchsia-300">
+                            時間枠
                         </p>
-                        <p className="mt-2 text-lg font-bold">
-                            {benefitTimeText}
-                        </p>
-                        <p className="mt-1 text-sm text-zinc-300">
-                            {benefitPlaceText}
-                        </p>
+                        <div className="mt-2 space-y-2 text-sm text-zinc-300">
+                            {scheduleLines.map((line) => (
+                                <p key={line.id}>
+                                    <span className="font-black text-white">{line.label}</span>
+                                    {`: ${line.timeText}`}
+                                    {line.placeText && ` / ${line.placeText}`}
+                                </p>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -229,7 +173,7 @@ export default async function LiveDetailPage({ params }: Props) {
                         href={venue.google_map_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-2 inline-block text-sm font-semibold text-pink-300 hover:underline"
+                        className="mt-4 inline-block text-sm font-bold text-fuchsia-300 hover:underline"
                     >
                         Google Mapで見る
                     </a>
@@ -241,7 +185,7 @@ export default async function LiveDetailPage({ params }: Props) {
                             href={live.ticket_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="rounded-full bg-pink-500 px-4 py-2 text-sm font-bold text-white"
+                            className="rounded-md bg-violet-500 px-4 py-2 text-sm font-black text-white hover:bg-violet-400"
                         >
                             チケット
                         </a>
@@ -252,7 +196,7 @@ export default async function LiveDetailPage({ params }: Props) {
                             href={live.official_x_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="rounded-full bg-zinc-800 px-4 py-2 text-sm font-bold text-zinc-100"
+                            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-black text-zinc-100 ring-1 ring-white/10 hover:bg-white hover:text-black"
                         >
                             公式X
                         </a>
@@ -268,7 +212,7 @@ export default async function LiveDetailPage({ params }: Props) {
 
             <section className="space-y-4">
                 <div>
-                    <h2 className="text-2xl font-bold">
+                    <h2 className="text-3xl font-black text-white">
                         セトリ
                     </h2>
 
@@ -277,57 +221,82 @@ export default async function LiveDetailPage({ params }: Props) {
                     </p>
                 </div>
 
-                {items.length === 0 && (
-                    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-400">
-                        {isUpcoming
-                            ? "セトリはライブ後に追加予定です。"
-                            : "まだセトリが登録されていません。"}
+                {live.schedule_items.filter((item) => item.schedule_kind === "live").length === 0 && (
+                    <div className="surface p-6 text-zinc-400 ring-1 ring-white/10">
+                        ライブ枠がまだ登録されていません。
                     </div>
                 )}
 
-                <ol className="space-y-3">
-                    {items.map((item) => {
-                        const song = Array.isArray(item.songs)
-                            ? item.songs[0]
-                            : item.songs;
-                        const visibleSong =
-                            song && !song.is_delete ? song : null;
+                {live.schedule_items
+                    .filter((item) => item.schedule_kind === "live")
+                    .map((item) => (
+                        <section key={item.id} className="space-y-3">
+                            <div>
+                                <h3 className="text-xl font-black text-white">
+                                    {item.item_title || "ライブ"}
+                                </h3>
+                                <p className="mt-1 text-sm text-zinc-400">
+                                    {item.start_time ? formatTime(item.start_time) : "未定"}
+                                    {item.end_time && `-${formatTime(item.end_time)}`}
+                                </p>
+                            </div>
 
-                        return (
-                            <li
-                                key={item.id}
-                                className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink-500 font-bold text-white">
-                                        {item.order_no}
-                                    </span>
-
-                                    <div>
-                                        {visibleSong ? (
-                                            <Link
-                                                href={`/songs/${visibleSong.slug}`}
-                                                className="text-lg font-bold hover:text-pink-300"
-                                            >
-                                                {visibleSong.title}
-                                            </Link>
-                                        ) : (
-                                            <p className="text-lg font-bold">
-                                                不明な曲
-                                            </p>
-                                        )}
-
-                                        {item.note && (
-                                            <p className="mt-1 text-sm text-zinc-400">
-                                                {item.note}
-                                            </p>
-                                        )}
-                                    </div>
+                            {item.setlist_items.length === 0 && (
+                                <div className="surface p-6 text-zinc-400 ring-1 ring-white/10">
+                                    {isUpcoming
+                                        ? "セトリはライブ後に追加予定です。"
+                                        : "まだセトリが登録されていません。"}
                                 </div>
-                            </li>
-                        );
-                    })}
-                </ol>
+                            )}
+
+                            <ol className="space-y-3">
+                                {item.setlist_items.map((setlistItem) => {
+                                    const visibleSong = setlistItem.song;
+                                    const visibleTitle =
+                                        visibleSong?.title
+                                        ?? setlistItem.entry_title
+                                        ?? setlistItem.display_label
+                                        ?? "項目未設定";
+
+                                    return (
+                                        <li
+                                            key={setlistItem.id}
+                                            className="group bg-[#111113] p-5 shadow-xl shadow-black/20 ring-1 ring-white/10 hover:-translate-y-0.5 hover:bg-white"
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                {visibleSong && (
+                                                    <span className="flex h-10 min-w-10 shrink-0 items-center justify-center rounded-sm bg-violet-500 px-2 font-black text-white group-hover:bg-black">
+                                                        {setlistItem.display_label}
+                                                    </span>
+                                                )}
+
+                                                <div>
+                                                    {visibleSong ? (
+                                                        <Link
+                                                            href={`/songs/${visibleSong.slug}`}
+                                                            className="text-lg font-black text-white group-hover:text-black"
+                                                        >
+                                                            {visibleTitle}
+                                                        </Link>
+                                                    ) : (
+                                                        <p className="text-lg font-black text-white group-hover:text-black">
+                                                            {visibleTitle}
+                                                        </p>
+                                                    )}
+
+                                                    {setlistItem.note && (
+                                                        <p className="mt-1 text-sm text-zinc-400 group-hover:text-zinc-700">
+                                                            {setlistItem.note}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </li>
+                                    );
+                                })}
+                            </ol>
+                        </section>
+                    ))}
             </section>
         </main>
     );

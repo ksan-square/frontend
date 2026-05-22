@@ -13,7 +13,7 @@ export default async function NewWikiPage() {
 
     if (!user) {
         redirect(
-            `/admin/login?redirectedFrom=${encodeURIComponent("/wiki/new")}`,
+            `/login?redirectedFrom=${encodeURIComponent("/wiki/new")}`,
         );
     }
 
