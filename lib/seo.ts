@@ -1,5 +1,6 @@
 export const SITE_NAME = "こしあんスクエア";
-export const SITE_LOGO_PATH = "/koshian_square_logo.png";
+export const SITE_LOGO_PATH = "/koshian_square_logo_embedded.svg";
+export const SITE_APPLE_ICON_PATH = "/koshian_square_logo.png";
 export const SITE_OG_IMAGE_PATH = "/ksan-square-OPG.png";
 export const DEFAULT_DESCRIPTION =
     "宵越しのアンサンブルの非公式ファンコミュニティ「こしあんスクエア」。ライブ情報・セトリ・コール・歌割・Wikiをまとめて掲載。";
