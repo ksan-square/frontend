@@ -4,11 +4,21 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createLive } from "@/lib/admin-api";
 
-export default function LiveForm() {
+export default function LiveForm({
+    venues,
+}: {
+    venues: {
+        id: string;
+        name: string;
+        area: string | null;
+    }[];
+}) {
     const router = useRouter();
     const [liveDate, setLiveDate] = useState("");
     const [sameDayOrder, setSameDayOrder] = useState(1);
     const [eventName, setEventName] = useState("");
+    const [venueId, setVenueId] = useState("");
+    const [placeDetail, setPlaceDetail] = useState("");
     const [ticketUrl, setTicketUrl] = useState("");
     const [officialXUrl, setOfficialXUrl] = useState("");
     const [memo, setMemo] = useState("");
@@ -21,6 +31,8 @@ export default function LiveForm() {
                 live_date: liveDate,
                 same_day_order: sameDayOrder,
                 event_name: eventName,
+                venue_id: venueId || null,
+                place_detail: placeDetail || null,
                 ticket_url: ticketUrl || null,
                 official_x_url: officialXUrl || null,
                 memo: memo || null,
@@ -46,6 +58,18 @@ export default function LiveForm() {
             <input className="w-full rounded-xl bg-zinc-950 p-3" type="number" min={1} placeholder="同日順 例: 1部=1, 2部=2" value={sameDayOrder} onChange={(e) => setSameDayOrder(Number(e.target.value))} />
 
             <input className="w-full rounded-xl bg-zinc-950 p-3" placeholder="イベント名" value={eventName} onChange={(e) => setEventName(e.target.value)} />
+
+            <select className="w-full rounded-xl bg-zinc-950 p-3" value={venueId} onChange={(e) => setVenueId(e.target.value)}>
+                <option value="">基準会場を未設定</option>
+                {venues.map((venue) => (
+                    <option key={venue.id} value={venue.id}>
+                        {venue.name}
+                        {venue.area ? ` / ${venue.area}` : ""}
+                    </option>
+                ))}
+            </select>
+
+            <input className="w-full rounded-xl bg-zinc-950 p-3" placeholder="親ライブの場所補足 例: メインステージ" value={placeDetail} onChange={(e) => setPlaceDetail(e.target.value)} />
 
             <input className="w-full rounded-xl bg-zinc-950 p-3" type="url" placeholder="チケットURL" value={ticketUrl} onChange={(e) => setTicketUrl(e.target.value)} />
 

@@ -148,6 +148,7 @@ export default async function LiveDetailPage({ params }: Props) {
                         <p className="mt-3 text-sm text-zinc-300">
                             {venue?.name ?? "会場未登録"}
                             {venue?.area && ` / ${venue.area}`}
+                            {live.place_detail && ` / ${live.place_detail}`}
                         </p>
                     </div>
 
@@ -251,6 +252,10 @@ export default async function LiveDetailPage({ params }: Props) {
                             <ol className="space-y-3">
                                 {item.setlist_items.map((setlistItem) => {
                                     const visibleSong = setlistItem.song;
+                                    const visibleTitle =
+                                        visibleSong?.title
+                                        ?? setlistItem.entry_title
+                                        ?? "項目未設定";
 
                                     return (
                                         <li
@@ -258,9 +263,11 @@ export default async function LiveDetailPage({ params }: Props) {
                                             className="group bg-[#111113] p-5 shadow-xl shadow-black/20 ring-1 ring-white/10 hover:-translate-y-0.5 hover:bg-white"
                                         >
                                             <div className="flex items-center gap-4">
-                                                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-violet-500 font-black text-white group-hover:bg-black">
-                                                    {setlistItem.order_no}
-                                                </span>
+                                                {visibleSong && (
+                                                    <span className="flex h-10 min-w-10 shrink-0 items-center justify-center rounded-sm bg-violet-500 px-2 font-black text-white group-hover:bg-black">
+                                                        {setlistItem.display_label}
+                                                    </span>
+                                                )}
 
                                                 <div>
                                                     {visibleSong ? (
@@ -268,11 +275,11 @@ export default async function LiveDetailPage({ params }: Props) {
                                                             href={`/songs/${visibleSong.slug}`}
                                                             className="text-lg font-black text-white group-hover:text-black"
                                                         >
-                                                            {visibleSong.title}
+                                                            {visibleTitle}
                                                         </Link>
                                                     ) : (
                                                         <p className="text-lg font-black text-white group-hover:text-black">
-                                                            不明な曲
+                                                            {visibleTitle}
                                                         </p>
                                                     )}
 
