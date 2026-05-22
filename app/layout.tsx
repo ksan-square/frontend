@@ -6,6 +6,7 @@ import JsonLd from "@/app/_components/json-ld";
 import ToastViewport from "@/app/_components/toast-viewport";
 import {
   DEFAULT_DESCRIPTION,
+  SITE_APPLE_ICON_PATH,
   SITE_LOGO_PATH,
   SITE_NAME,
   SITE_OG_IMAGE_PATH,
@@ -29,13 +30,12 @@ export const metadata: Metadata = {
     icon: [
       {
         url: SITE_LOGO_PATH,
-        type: "image/png",
-        sizes: "1024x1024",
+        type: "image/svg+xml",
       },
     ],
     apple: [
       {
-        url: SITE_LOGO_PATH,
+        url: SITE_APPLE_ICON_PATH,
         type: "image/png",
         sizes: "1024x1024",
       },
@@ -114,7 +114,7 @@ export default function RootLayout({
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
             <Link href="/" className="group flex items-center gap-3">
               <Image
-                src="/koshian_square_logo.png"
+                src={SITE_LOGO_PATH}
                 alt=""
                 width={40}
                 height={40}

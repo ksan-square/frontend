@@ -1,19 +1,9 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import PageHero from "@/app/_components/page-hero";
 import Pagination from "@/app/_components/pagination";
 import { createPathWithQuery, getPaginationRange, parsePageParam, parseTrimmedParam } from "@/lib/page-utils";
-import { getPublicSongs } from "@/lib/public-api";
-
-export const metadata: Metadata = {
-    title: "曲一覧",
-    description:
-        "宵越しのアンサンブル楽曲のコール・歌割・歌詞構成を掲載。ライブで使えるコール案やメンバー歌割を曲ごとに確認できます。",
-    alternates: {
-        canonical: "/songs",
-    },
-};
+import { getAdminSongs } from "@/lib/admin-server-api";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -27,10 +17,10 @@ type SearchParams = Promise<{
 }>;
 
 function createSongsHref(initial?: string | null) {
-    return createPathWithQuery("/songs", { initial });
+    return createPathWithQuery("/editor/songs", { initial });
 }
 
-export default async function SongsPage({
+export default async function AdminSongsPage({
     searchParams,
 }: {
     searchParams: SearchParams;
@@ -38,22 +28,26 @@ export default async function SongsPage({
     const params = await searchParams;
     const requestedInitial = parseTrimmedParam(params.initial);
     const requestedPage = parsePageParam(params.page);
-    const response = await getPublicSongs({
-        initial: requestedInitial,
-        page: requestedPage,
-    }).catch((error) => ({
-        error: error instanceof Error ? error.message : "unknown error",
-    }));
 
-    if ("error" in response) {
-        return <main>曲一覧の取得に失敗しました: {response.error}</main>;
+    let payload;
+    try {
+        payload = await getAdminSongs({
+            initial: requestedInitial,
+            page: requestedPage,
+        });
+    } catch (error) {
+        return (
+            <main>
+                取得失敗: {error instanceof Error ? error.message : "unknown error"}
+            </main>
+        );
     }
 
-    const songs = response.items;
-    const songIndex = response.index;
-    const totalSongs = response.pagination.total_items;
-    const totalPages = response.pagination.total_pages;
-    const currentPage = response.pagination.page;
+    const songIndex = payload.index;
+    const songs = payload.items;
+    const totalSongs = payload.pagination.total_items;
+    const totalPages = payload.pagination.total_pages;
+    const currentPage = payload.pagination.page;
     const { displayStart, displayEnd } = getPaginationRange({
         currentPage,
         pageSize: PAGE_SIZE,
@@ -67,18 +61,31 @@ export default async function SongsPage({
 
     return (
         <main className="space-y-10">
-            <Breadcrumbs items={[{ label: "曲一覧" }]} />
+            <Breadcrumbs
+                items={[
+                    { href: "/editor", label: "管理" },
+                    { label: "曲管理" },
+                ]}
+            />
 
             <PageHero
-                badge="Songs"
-                title="曲一覧"
-                description="歌割・コール・作詞作曲情報を確認できます。"
+                badge="Editor / Songs"
+                title="曲管理"
+                description="曲情報、説明文、歌詞ページの元データを更新します。"
+                action={
+                    <Link
+                        href="/editor/songs/new"
+                        className="w-fit rounded-md bg-violet-500 px-5 py-3 text-sm font-black text-white hover:bg-violet-400"
+                    >
+                        新規追加
+                    </Link>
+                }
             />
 
             <section className="surface-subtle p-4">
                 <div className="flex flex-wrap items-center gap-2">
                     <Link
-                        href="/songs"
+                        href="/editor/songs"
                         aria-current={!selectedInitial ? "page" : undefined}
                         className="rounded-sm bg-zinc-900 px-3 py-1.5 text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black aria-current:bg-violet-500 aria-current:font-black aria-current:text-white"
                     >
@@ -89,11 +96,15 @@ export default async function SongsPage({
                         <Link
                             key={item.key}
                             href={createSongsHref(item.key)}
-                            aria-current={selectedInitial === item.key ? "page" : undefined}
+                            aria-current={
+                                selectedInitial === item.key
+                                    ? "page"
+                                    : undefined
+                            }
                             className="rounded-sm bg-zinc-900 px-3 py-1.5 text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black aria-current:bg-violet-500 aria-current:font-black aria-current:text-white"
                         >
                             {item.key}
-                            <span className="ml-1 text-xs text-zinc-400 aria-current:text-violet-100">
+                            <span className="ml-1 text-xs text-zinc-400">
                                 {item.count}
                             </span>
                         </Link>
@@ -108,7 +119,7 @@ export default async function SongsPage({
 
                 {selectedInitial && (
                     <Link
-                        href="/songs"
+                        href="/editor/songs"
                         className="rounded-sm bg-zinc-900 px-3 py-1.5 text-zinc-100 ring-1 ring-white/10 hover:bg-white hover:text-black"
                     >
                         頭文字選択を解除
@@ -118,36 +129,28 @@ export default async function SongsPage({
 
             <section className="grid gap-4">
                 {songs.length === 0 && (
-                    <div className="surface p-6 text-zinc-400 ring-1 ring-white/10">
+                    <p className="surface p-6 text-zinc-400 ring-1 ring-white/10">
                         曲が登録されていません。
-                    </div>
+                    </p>
                 )}
 
                 {songs.map((song) => (
                     <Link
                         key={song.id}
-                        href={`/songs/${song.slug}`}
-                        className="group bg-[#111113] p-5 shadow-xl shadow-black/20 ring-1 ring-white/10 hover:-translate-y-0.5 hover:bg-white"
+                        href={`/editor/songs/${song.id}/edit`}
+                        className="group block bg-[#111113] p-5 shadow-xl shadow-black/20 ring-1 ring-white/10 hover:-translate-y-0.5 hover:bg-white"
                     >
-                        <h2 className="text-xl font-black text-white group-hover:text-black">
-                            {song.title}
-                        </h2>
-
-                        {song.description && (
-                            <p className="mt-2 text-sm leading-6 text-zinc-400 group-hover:text-zinc-700">{song.description}</p>
-                        )}
-
-                        <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-zinc-500 group-hover:text-zinc-600">
-                            {song.lyricist && <span>作詞: {song.lyricist}</span>}
-                            {song.composer && <span>作曲: {song.composer}</span>}
-                            {song.arranger && <span>編曲: {song.arranger}</span>}
-                        </div>
+                        <h2 className="text-xl font-black text-white group-hover:text-black">{song.title}</h2>
+                        <p className="mt-1 text-sm text-zinc-400 group-hover:text-zinc-700">slug: {song.slug}</p>
+                        <p className="mt-2 text-sm text-zinc-400 group-hover:text-zinc-700">
+                            作詞: {song.lyricist ?? "未登録"} / 作曲: {song.composer ?? "未登録"} / 編曲: {song.arranger ?? "未登録"}
+                        </p>
                     </Link>
                 ))}
             </section>
 
             <Pagination
-                basePath="/songs"
+                basePath="/editor/songs"
                 currentPage={currentPage}
                 totalPages={totalPages}
                 query={{ initial: selectedInitial }}
