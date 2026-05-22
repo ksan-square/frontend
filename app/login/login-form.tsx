@@ -2,7 +2,7 @@
 
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { showToast } from "@/lib/toast";
 
 function normalizeRedirect(path: string | null) {
@@ -27,16 +27,34 @@ export default function LoginForm() {
         process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     );
 
+    const logAuthDebug = useCallback(
+        (event: string, detail: Record<string, unknown>) => {
+            console.error(`[auth-debug] ${event}`, {
+                ...detail,
+                origin: typeof window !== "undefined" ? window.location.origin : null,
+                redirectedFrom,
+                supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? null,
+                supabaseKeyPrefix:
+                    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.slice(0, 24) ?? null,
+            });
+        },
+        [redirectedFrom],
+    );
+
     useEffect(() => {
         if (authError !== "oauth_callback_failed" && authError !== "missing_code") {
             return;
         }
 
+        logAuthDebug("login_page_query_error", {
+            authError,
+        });
+
         showToast({
             kind: "error",
             text: "ログイン処理を完了できませんでした。もう一度お試しください。",
         });
-    }, [authError]);
+    }, [authError, logAuthDebug]);
 
     async function handlePasswordLogin(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -50,6 +68,13 @@ export default function LoginForm() {
         setIsSubmitting(false);
 
         if (error) {
+            logAuthDebug("password_login_failed", {
+                code: error.code,
+                name: error.name,
+                status: error.status,
+                message: error.message,
+                email,
+            });
             showToast({
                 kind: "error",
                 text: `ログインに失敗しました: ${error.message}`,
@@ -79,6 +104,13 @@ export default function LoginForm() {
         setIsOAuthSubmitting(false);
 
         if (error) {
+            logAuthDebug("x_login_start_failed", {
+                code: error.code,
+                name: error.name,
+                status: error.status,
+                message: error.message,
+                callbackTarget: callbackTarget.toString(),
+            });
             showToast({
                 kind: "error",
                 text: `Xログインを開始できませんでした: ${error.message}`,
