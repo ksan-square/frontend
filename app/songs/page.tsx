@@ -8,7 +8,7 @@ import { getPublicSongs } from "@/lib/public-api";
 export const metadata: Metadata = {
     title: "曲一覧",
     description:
-        "歌詞、コール、作詞作曲情報を探せる曲一覧ページです。",
+        "宵越しのアンサンブル楽曲のコール・歌割・歌詞構成を掲載。ライブで使えるコール案やメンバー歌割を曲ごとに確認できます。",
     alternates: {
         canonical: "/songs",
     },

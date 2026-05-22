@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
+import JsonLd from "@/app/_components/json-ld";
 import { formatTime, getTodayInTokyo } from "@/lib/date-time";
 import { getPrimaryVenue, getScheduleSummaryLines } from "@/lib/live-utils";
-import { DEFAULT_DESCRIPTION, createDescription, joinDescriptionParts } from "@/lib/seo";
+import { DEFAULT_DESCRIPTION, createDescription, getSiteUrl, joinDescriptionParts } from "@/lib/seo";
 import { getPublicLiveDetail } from "@/lib/public-api";
 
 export const dynamic = "force-dynamic";
@@ -31,33 +32,36 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 
     const primaryVenue = getPrimaryVenue(liveData);
-    const liveTimeText = liveData.start_time
-        ? liveData.end_time
-            ? `${formatTime(liveData.start_time)}-${formatTime(liveData.end_time)}`
-            : formatTime(liveData.start_time)
-        : null;
+    const venueText = [primaryVenue?.name, primaryVenue?.area].filter(Boolean).join(" / ");
+    const setlistSummary = createDescription(
+        liveData.schedule_items
+            .filter((item) => item.schedule_kind === "live")
+            .flatMap((item) => item.setlist_items.map((setlistItem) => setlistItem.song?.title ?? setlistItem.entry_title ?? setlistItem.display_label))
+            .filter(Boolean)
+            .join(" / "),
+        48,
+    );
     const description = joinDescriptionParts([
-        liveData.live_date,
-        liveTimeText,
-        primaryVenue?.name,
-        primaryVenue?.area,
-        getScheduleSummaryLines(liveData).map((line) => `${line.label}: ${line.timeText}`).join(" / "),
-        createDescription(liveData.memo, 80),
+        `宵越しのアンサンブル${liveData.event_name ? `「${liveData.event_name}」` : ""}のセトリ・会場情報・出演内容を掲載。`,
+        "ライブごとのセットリストを確認できます。",
+        venueText || null,
+        setlistSummary,
+        createDescription(liveData.memo, 40),
     ]);
 
     return {
-        title: liveData.event_name,
+        title: `${liveData.event_name} セトリ | 宵越しのアンサンブル`,
         description,
         alternates: {
             canonical: `/lives/${id}`,
         },
         openGraph: {
-            title: liveData.event_name,
+            title: `${liveData.event_name} セトリ | 宵越しのアンサンブル`,
             description,
             url: `/lives/${id}`,
         },
         twitter: {
-            title: liveData.event_name,
+            title: `${liveData.event_name} セトリ | 宵越しのアンサンブル`,
             description,
         },
     };
@@ -106,6 +110,7 @@ export default async function LiveDetailPage({ params }: Props) {
     }
 
     const live = payload.live;
+    const siteUrl = getSiteUrl();
     const venue = getPrimaryVenue(live);
     const scheduleLines = getScheduleSummaryLines(live);
     const isUpcoming = live.live_date >= today;
@@ -114,9 +119,75 @@ export default async function LiveDetailPage({ params }: Props) {
             ? `${formatTime(live.start_time)}-${formatTime(live.end_time)}`
             : formatTime(live.start_time)
         : "時間未定";
+    const liveUrl = `${siteUrl}/lives/${live.id}`;
+    const structuredDescription = joinDescriptionParts([
+        `宵越しのアンサンブル${live.event_name ? `「${live.event_name}」` : ""}のセトリ・会場情報・出演内容を掲載。`,
+        "ライブごとのセットリストを確認できます。",
+        venue?.name ? `会場: ${venue.name}` : null,
+        live.memo,
+    ]);
+    const startDate = live.start_time
+        ? `${live.live_date}T${live.start_time}+09:00`
+        : live.live_date;
+    const endDate = live.end_time
+        ? `${live.live_date}T${live.end_time}+09:00`
+        : undefined;
+    const breadcrumbJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+            {
+                "@type": "ListItem",
+                position: 1,
+                name: "こしあんスクエア",
+                item: siteUrl,
+            },
+            {
+                "@type": "ListItem",
+                position: 2,
+                name: "ライブ",
+                item: `${siteUrl}/lives`,
+            },
+            {
+                "@type": "ListItem",
+                position: 3,
+                name: live.event_name,
+                item: liveUrl,
+            },
+        ],
+    };
+    const eventJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "MusicEvent",
+        name: live.event_name,
+        url: liveUrl,
+        description: structuredDescription,
+        startDate,
+        endDate,
+        eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+        eventStatus: isUpcoming
+            ? "https://schema.org/EventScheduled"
+            : "https://schema.org/EventCompleted",
+        performer: {
+            "@type": "MusicGroup",
+            name: "宵越しのアンサンブル",
+        },
+        location: {
+            "@type": "Place",
+            name: venue?.name ?? live.place_detail ?? "会場未定",
+            address: venue?.area ?? live.place_detail ?? undefined,
+        },
+        organizer: {
+            "@type": "Organization",
+            name: "こしあんスクエア",
+            url: siteUrl,
+        },
+    };
 
     return (
         <main className="space-y-10">
+            <JsonLd data={breadcrumbJsonLd} />
+            <JsonLd data={eventJsonLd} />
             <Breadcrumbs
                 items={[
                     { href: "/lives", label: "ライブ" },

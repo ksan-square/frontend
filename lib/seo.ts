@@ -1,6 +1,8 @@
 export const SITE_NAME = "こしあんスクエア";
+export const SITE_LOGO_PATH = "/koshian_square_logo.png";
+export const SITE_OG_IMAGE_PATH = "/ksan-square-OPG.png";
 export const DEFAULT_DESCRIPTION =
-    "宵越しのアンサンブルの曲、ライブ、Wikiを見やすくまとめた非公式ファンデータベースです。";
+    "宵越しのアンサンブルの非公式ファンコミュニティ「こしあんスクエア」。ライブ情報・セトリ・コール・歌割・Wikiをまとめて掲載。";
 
 function trimTrailingSlash(value: string) {
     return value.endsWith("/") ? value.slice(0, -1) : value;
@@ -30,6 +32,10 @@ export function createMetadataBase() {
 
 export function buildCanonicalPath(path: string) {
     return path.startsWith("/") ? path : `/${path}`;
+}
+
+export function buildAbsoluteUrl(path: string) {
+    return new URL(buildCanonicalPath(path), createMetadataBase()).toString();
 }
 
 export function stripMarkdown(value: string) {

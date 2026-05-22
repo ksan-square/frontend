@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
+import JsonLd from "@/app/_components/json-ld";
 import RichMarkdown from "@/app/_components/rich-markdown";
 import {
     DEFAULT_DESCRIPTION,
     createDescription,
+    getSiteUrl,
     joinDescriptionParts,
 } from "@/lib/seo";
 import { getPublicWikiPageDetail } from "@/lib/public-api";
@@ -36,24 +38,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         };
     }
 
+    const bodyDescription = createDescription(page.body_markdown, 48);
     const description = joinDescriptionParts([
-        createDescription(page.body_markdown, 120),
+        "宵越しのアンサンブルに関する非公式Wikiページ。",
+        bodyDescription
+            ? `ライブ情報・用語・メンバー情報をファン向けにまとめています。${bodyDescription}`
+            : "ライブ情報・用語・メンバー情報をファン向けにまとめています。",
         page.is_published ? null : "下書き",
     ]);
 
     return {
-        title: page.title,
+        title: `${page.title} | 宵越しのアンサンブル Wiki`,
         description,
         alternates: {
             canonical: `/wiki/${page.slug}`,
         },
         openGraph: {
-            title: page.title,
+            title: `${page.title} | 宵越しのアンサンブル Wiki`,
             description,
             url: `/wiki/${page.slug}`,
         },
         twitter: {
-            title: page.title,
+            title: `${page.title} | 宵越しのアンサンブル Wiki`,
             description,
         },
     };
@@ -77,6 +83,7 @@ type WikiComment = {
 
 export default async function WikiDetailPage({ params }: Props) {
     const { slug } = await params;
+    const siteUrl = getSiteUrl();
     const authClient = await createSupabaseServerClient();
     const {
         data: { user },
@@ -122,9 +129,65 @@ export default async function WikiDetailPage({ params }: Props) {
 
     const wikiPage = payload.page as WikiPage;
     const wikiComments = payload.comments as WikiComment[];
+    const wikiUrl = `${siteUrl}/wiki/${wikiPage.slug}`;
+    const articleDescription = joinDescriptionParts([
+        "宵越しのアンサンブルに関する非公式Wikiページ。",
+        createDescription(wikiPage.body_markdown, 120),
+    ]);
+    const articleJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: wikiPage.title,
+        name: wikiPage.title,
+        description: articleDescription,
+        url: wikiUrl,
+        mainEntityOfPage: wikiUrl,
+        inLanguage: "ja",
+        dateModified: wikiPage.updated_at,
+        author: {
+            "@type": "Organization",
+            name: "こしあんスクエア",
+            url: siteUrl,
+        },
+        publisher: {
+            "@type": "Organization",
+            name: "こしあんスクエア",
+            url: siteUrl,
+        },
+        about: {
+            "@type": "MusicGroup",
+            name: "宵越しのアンサンブル",
+        },
+    };
+    const breadcrumbJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+            {
+                "@type": "ListItem",
+                position: 1,
+                name: "こしあんスクエア",
+                item: siteUrl,
+            },
+            {
+                "@type": "ListItem",
+                position: 2,
+                name: "Wiki",
+                item: `${siteUrl}/wiki`,
+            },
+            {
+                "@type": "ListItem",
+                position: 3,
+                name: wikiPage.title,
+                item: wikiUrl,
+            },
+        ],
+    };
 
     return (
         <main className="space-y-10">
+            <JsonLd data={articleJsonLd} />
+            <JsonLd data={breadcrumbJsonLd} />
             <Breadcrumbs
                 items={[
                     { href: "/wiki", label: "Wiki" },
