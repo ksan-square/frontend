@@ -26,7 +26,7 @@ export default async function EditWikiPage({ params }: Props) {
 
     if (!user) {
         redirect(
-            `/admin/login?redirectedFrom=${encodeURIComponent(
+            `/login?redirectedFrom=${encodeURIComponent(
                 `/wiki/${slug}/edit`,
             )}`,
         );

@@ -68,8 +68,8 @@ export default function RootLayout({
               <Link href="/wiki" className="rounded-sm px-3 py-1.5 hover:bg-white hover:text-black">
                 Wiki
               </Link>
-              <Link href="/admin" className="rounded-sm px-3 py-1.5 hover:bg-white hover:text-black">
-                管理画面
+              <Link href="/portal" className="rounded-sm px-3 py-1.5 hover:bg-white hover:text-black">
+                ポータル
               </Link>
             </nav>
 
@@ -95,8 +95,8 @@ export default function RootLayout({
                 <Link href="/wiki" className="px-4 py-3 hover:bg-white hover:text-black">
                   Wiki
                 </Link>
-                <Link href="/admin" className="px-4 py-3 hover:bg-white hover:text-black">
-                  管理画面
+                <Link href="/portal" className="px-4 py-3 hover:bg-white hover:text-black">
+                  ポータル
                 </Link>
               </nav>
             </details>
