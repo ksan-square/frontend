@@ -1,7 +1,22 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+    DndContext,
+    PointerSensor,
+    closestCenter,
+    type DragEndEvent,
+    useSensor,
+    useSensors,
+} from "@dnd-kit/core";
+import {
+    SortableContext,
+    arrayMove,
+    useSortable,
+    verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import SongContentBlocks from "@/app/_components/song-content-blocks";
 import { saveSongContentBlocks, saveSongMarkdown } from "@/lib/admin-api";
 
@@ -136,8 +151,35 @@ function reorderBlocks(blocks: Block[]) {
     }));
 }
 
-function getSectionPreview(block: Block) {
-    return block.section_label?.trim() || "見出し未設定";
+function getBlockTitle(block: Block) {
+    if (block.block_type === "section") {
+        return block.section_label?.trim() || "見出し";
+    }
+    if (block.block_type === "member") {
+        return block.performer_label?.trim() || "歌ブロック";
+    }
+    if (block.block_type === "call") {
+        return "CALL";
+    }
+    if (block.block_type === "note") {
+        return "ノート";
+    }
+    return "その他";
+}
+
+function getBlockBadge(blockType: BlockType) {
+    switch (blockType) {
+        case "section":
+            return "見出し";
+        case "member":
+            return "歌";
+        case "call":
+            return "CALL";
+        case "note":
+            return "ノート";
+        default:
+            return "その他";
+    }
 }
 
 function serializeBlocksToMarkdown(blocks: Block[]) {
@@ -165,6 +207,171 @@ function serializeBlocksToMarkdown(blocks: Block[]) {
         .join("\n\n");
 }
 
+function SortableBlockItem({
+    block,
+    members,
+    isEditing,
+    onEdit,
+    onDone,
+    onDelete,
+    onUpdate,
+    onToggleMember,
+}: {
+    block: Block;
+    members: Member[];
+    isEditing: boolean;
+    onEdit: (id: string) => void;
+    onDone: () => void;
+    onDelete: (id: string) => void;
+    onUpdate: (id: string, patch: Partial<Block>) => void;
+    onToggleMember: (blockId: string, member: Member) => void;
+}) {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: block.id });
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <article
+            ref={setNodeRef}
+            style={style}
+            className="group relative"
+        >
+            {!isEditing ? (
+                <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => onEdit(block.id)}
+                    onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            onEdit(block.id);
+                        }
+                    }}
+                    className="cursor-text rounded-sm outline-none transition hover:bg-white/[0.03] focus-visible:ring-2 focus-visible:ring-pink-400"
+                >
+                    <button
+                        type="button"
+                        aria-label="並び替え"
+                        onClick={(event) => event.stopPropagation()}
+                        className="absolute -left-8 top-3 hidden h-8 w-6 cursor-grab items-center justify-center rounded-sm text-zinc-500 opacity-0 transition hover:bg-white/10 hover:text-white group-hover:flex group-hover:opacity-100"
+                        {...attributes}
+                        {...listeners}
+                    >
+                        ::
+                    </button>
+                    <SongContentBlocks blocks={[block]} members={members} />
+                </div>
+            ) : (
+                <div className="space-y-4 rounded-sm bg-[#111113] p-5 shadow-xl shadow-black/20 ring-1 ring-pink-400/40">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="rounded-sm bg-violet-500/15 px-3 py-1 text-xs font-bold text-fuchsia-200 ring-1 ring-violet-300/20">
+                                    {getBlockBadge(block.block_type)}
+                                </span>
+                                <p className="truncate text-lg font-black text-white">
+                                    {getBlockTitle(block)}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                            <button type="button" onClick={onDone} className="rounded-sm bg-white px-3 py-2 text-xs font-bold text-black">
+                                完了
+                            </button>
+                            <button type="button" onClick={() => onDelete(block.id)} className="rounded-sm bg-red-500 px-3 py-2 text-xs font-bold text-white">
+                                削除
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="grid gap-3 md:grid-cols-[160px_minmax(0,1fr)]">
+                        <select
+                            value={block.block_type}
+                            onChange={(event) =>
+                                onUpdate(block.id, {
+                                    block_type: event.target.value as BlockType,
+                                    members: event.target.value === "member" ? block.members : [],
+                                    performer_label: event.target.value === "member" ? block.performer_label : null,
+                                    section_label: event.target.value === "section" ? block.section_label : null,
+                                })
+                            }
+                            className="rounded-sm bg-zinc-950 p-3 text-sm"
+                        >
+                            <option value="section">見出し</option>
+                            <option value="member">歌</option>
+                            <option value="call">CALL</option>
+                            <option value="note">ノート</option>
+                            <option value="other">その他</option>
+                        </select>
+
+                        {block.block_type === "section" ? (
+                            <input
+                                value={block.section_label ?? ""}
+                                onChange={(event) => onUpdate(block.id, { section_label: event.target.value })}
+                                placeholder="見出し名"
+                                className="rounded-sm bg-zinc-950 p-3"
+                            />
+                        ) : (
+                            <textarea
+                                value={block.body_markdown}
+                                onChange={(event) => onUpdate(block.id, { body_markdown: event.target.value })}
+                                placeholder={block.block_type === "call" ? "CALL本文" : "本文"}
+                                className="min-h-[120px] rounded-sm bg-zinc-950 p-3 font-mono text-sm leading-7"
+                            />
+                        )}
+                    </div>
+
+                    {block.block_type === "member" && (
+                        <div className="space-y-3">
+                            <input
+                                value={block.performer_label ?? ""}
+                                onChange={(event) => onUpdate(block.id, { performer_label: event.target.value })}
+                                placeholder="表示ラベル 例: 全員 / 詩田 / 詩田・一ノ瀬"
+                                className="w-full rounded-sm bg-zinc-950 p-3"
+                            />
+                            <div className="flex flex-wrap gap-2">
+                                {members.map((member) => {
+                                    const checked = block.members.some((item) => item.id === member.id);
+                                    return (
+                                        <button
+                                            key={member.id}
+                                            type="button"
+                                            onClick={() => onToggleMember(block.id, member)}
+                                            className="rounded-sm px-3 py-2 text-xs font-semibold ring-1 ring-white/10"
+                                            style={{
+                                                backgroundColor: checked ? (member.member_color_code ?? "#52525b") : "#18181b",
+                                                color: checked ? (member.lyric_display_color_code ?? "#ffffff") : "#e4e4e7",
+                                            }}
+                                        >
+                                            {member.name}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {block.block_type !== "section" && block.block_type !== "call" && (
+                        <input
+                            value={block.note ?? ""}
+                            onChange={(event) => onUpdate(block.id, { note: event.target.value })}
+                            placeholder="メモ"
+                            className="w-full rounded-sm bg-zinc-950 p-3"
+                        />
+                    )}
+
+                    <div className="border-t border-white/10 pt-4">
+                        <SongContentBlocks blocks={[block]} members={members} />
+                    </div>
+                </div>
+            )}
+        </article>
+    );
+}
+
 export default function SongMarkdownEditor({
     songId,
     songTitle,
@@ -187,15 +394,8 @@ export default function SongMarkdownEditor({
         initialMarkdown || serializeBlocksToMarkdown(initialBlocks),
     );
     const [message, setMessage] = useState("");
-
-    const previewBlocks = useMemo(
-        () =>
-            blocks.map((block) => ({
-                ...block,
-                members: block.members,
-            })),
-        [blocks],
-    );
+    const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
+    const sensors = useSensors(useSensor(PointerSensor));
 
     function updateBlock(id: string, patch: Partial<Block>) {
         setBlocks((current) =>
@@ -221,31 +421,43 @@ export default function SongMarkdownEditor({
     }
 
     function addBlock(blockType: BlockType) {
-        setBlocks((current) => [
-            ...current,
-            createEmptyBlock(blockType, current.length + 1),
-        ]);
-    }
-
-    function moveBlock(id: string, direction: -1 | 1) {
+        const nextBlock = createEmptyBlock(blockType, blocks.length + 1);
         setBlocks((current) => {
-            const index = current.findIndex((block) => block.id === id);
-            if (index < 0) {
-                return current;
+            const editingIndex = editingBlockId
+                ? current.findIndex((block) => block.id === editingBlockId)
+                : -1;
+            if (editingIndex < 0) {
+                return reorderBlocks([...current, nextBlock]);
             }
-            const nextIndex = index + direction;
-            if (nextIndex < 0 || nextIndex >= current.length) {
-                return current;
-            }
-            const next = [...current];
-            const [target] = next.splice(index, 1);
-            next.splice(nextIndex, 0, target);
-            return reorderBlocks(next);
+            return reorderBlocks([
+                ...current.slice(0, editingIndex + 1),
+                nextBlock,
+                ...current.slice(editingIndex + 1),
+            ]);
         });
+        setEditingBlockId(nextBlock.id);
     }
 
     function deleteBlock(id: string) {
         setBlocks((current) => reorderBlocks(current.filter((block) => block.id !== id)));
+        if (editingBlockId === id) {
+            setEditingBlockId(null);
+        }
+    }
+
+    function handleDragEnd(event: DragEndEvent) {
+        const { active, over } = event;
+        if (!over || active.id === over.id) {
+            return;
+        }
+        setBlocks((current) => {
+            const oldIndex = current.findIndex((block) => block.id === active.id);
+            const newIndex = current.findIndex((block) => block.id === over.id);
+            if (oldIndex < 0 || newIndex < 0) {
+                return current;
+            }
+            return reorderBlocks(arrayMove(current, oldIndex, newIndex));
+        });
     }
 
     function switchToMarkdown() {
@@ -255,6 +467,7 @@ export default function SongMarkdownEditor({
 
     function switchToBlock() {
         setBlocks(parseMarkdownToBlocks(markdownBody, members));
+        setEditingBlockId(null);
         setMode("block");
     }
 
@@ -294,6 +507,7 @@ export default function SongMarkdownEditor({
 
         setBlocks(nextBlocks);
         setMarkdownBody(nextMarkdown);
+        setEditingBlockId(null);
         setMessage("保存しました。");
         router.refresh();
     }
@@ -301,12 +515,9 @@ export default function SongMarkdownEditor({
     return (
         <section className="space-y-5 rounded-2xl border border-zinc-800 bg-zinc-900 p-4 sm:space-y-6 sm:p-6">
             <div>
-                <h2 className="text-2xl font-bold">歌詞・コール Block 編集</h2>
+                <h2 className="text-3xl font-black text-white">歌詞・コール編集</h2>
                 <p className="mt-2 text-sm text-zinc-400">
-                    {songTitle} を block 単位で管理します。将来的な検索、統計、API公開を前提にした構造です。
-                </p>
-                <p className="mt-2 text-xs text-zinc-500">
-                    既存 Markdown がある場合は、初回表示時に block へ変換して編集できます。
+                    {songTitle}
                 </p>
             </div>
 
@@ -344,148 +555,48 @@ export default function SongMarkdownEditor({
 
             {mode === "block" ? (
                 <>
-                    <div className="flex flex-wrap gap-2">
-                        <button type="button" onClick={() => addBlock("section")} className="rounded-full bg-zinc-800 px-3 py-2 text-sm">
-                            見出し追加
+                    <div className="flex flex-wrap gap-2 border-y border-white/10 py-3">
+                        <button type="button" onClick={() => addBlock("section")} className="rounded-sm bg-zinc-900 px-4 py-2 text-sm text-zinc-100 ring-1 ring-white/10 hover:bg-white hover:text-black">
+                            + 見出し
                         </button>
-                        <button type="button" onClick={() => addBlock("member")} className="rounded-full bg-zinc-800 px-3 py-2 text-sm">
-                            歌唱ブロック追加
+                        <button type="button" onClick={() => addBlock("member")} className="rounded-sm bg-zinc-900 px-4 py-2 text-sm text-zinc-100 ring-1 ring-white/10 hover:bg-white hover:text-black">
+                            + 歌
                         </button>
-                        <button type="button" onClick={() => addBlock("call")} className="rounded-full bg-zinc-800 px-3 py-2 text-sm">
-                            CALL追加
+                        <button type="button" onClick={() => addBlock("call")} className="rounded-sm bg-zinc-900 px-4 py-2 text-sm text-zinc-100 ring-1 ring-white/10 hover:bg-white hover:text-black">
+                            + CALL
                         </button>
-                        <button type="button" onClick={() => addBlock("note")} className="rounded-full bg-zinc-800 px-3 py-2 text-sm">
-                            ノート追加
+                        <button type="button" onClick={() => addBlock("note")} className="rounded-sm bg-zinc-900 px-4 py-2 text-sm text-zinc-100 ring-1 ring-white/10 hover:bg-white hover:text-black">
+                            + ノート
                         </button>
-                        <button type="button" onClick={() => addBlock("other")} className="rounded-full bg-zinc-800 px-3 py-2 text-sm">
-                            その他追加
+                        <button type="button" onClick={() => addBlock("other")} className="rounded-sm bg-zinc-900 px-4 py-2 text-sm text-zinc-100 ring-1 ring-white/10 hover:bg-white hover:text-black">
+                            + その他
                         </button>
                     </div>
 
-                    <div className="grid gap-0 overflow-hidden rounded-2xl border border-zinc-800 lg:grid-cols-2">
-                        <div className="max-h-[78vh] overflow-y-auto border-b border-zinc-800 bg-zinc-950 p-4 lg:border-b-0 lg:border-r">
-                            <div className="space-y-4">
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                        <SortableContext items={blocks.map((block) => block.id)} strategy={verticalListSortingStrategy}>
+                            <div className="space-y-3 pl-0 sm:pl-8">
                                 {blocks.length === 0 && (
-                                    <p className="text-sm text-zinc-500">まだ block がありません。</p>
+                                    <div className="surface p-6 text-zinc-400 ring-1 ring-white/10">
+                                        まだ block がありません。
+                                    </div>
                                 )}
-
-                                {blocks.map((block, index) => (
-                                    <article key={block.id} className="space-y-3 rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
-                                        <div className="flex flex-wrap items-center justify-between gap-2">
-                                            <div className="flex items-center gap-2">
-                                                <span className="rounded-full bg-pink-500 px-3 py-1 text-xs font-bold text-white">
-                                                    {index + 1}
-                                                </span>
-                                                <select
-                                                    value={block.block_type}
-                                                    onChange={(event) =>
-                                                        updateBlock(block.id, {
-                                                            block_type: event.target.value as BlockType,
-                                                            members:
-                                                                event.target.value === "member" ? block.members : [],
-                                                            performer_label:
-                                                                event.target.value === "member" ? block.performer_label : null,
-                                                            section_label:
-                                                                event.target.value === "section" ? block.section_label : null,
-                                                        })
-                                                    }
-                                                    className="rounded-xl bg-zinc-950 p-2 text-sm"
-                                                >
-                                                    <option value="section">見出し</option>
-                                                    <option value="member">歌唱</option>
-                                                    <option value="call">CALL</option>
-                                                    <option value="note">ノート</option>
-                                                    <option value="other">その他</option>
-                                                </select>
-                                            </div>
-
-                                            <div className="flex gap-2">
-                                                <button type="button" onClick={() => moveBlock(block.id, -1)} className="rounded-full bg-zinc-800 px-3 py-1 text-xs">
-                                                    上へ
-                                                </button>
-                                                <button type="button" onClick={() => moveBlock(block.id, 1)} className="rounded-full bg-zinc-800 px-3 py-1 text-xs">
-                                                    下へ
-                                                </button>
-                                                <button type="button" onClick={() => deleteBlock(block.id)} className="rounded-full bg-red-500 px-3 py-1 text-xs text-white">
-                                                    削除
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        {block.block_type === "section" && (
-                                            <input
-                                                value={block.section_label ?? ""}
-                                                onChange={(event) => updateBlock(block.id, { section_label: event.target.value })}
-                                                placeholder="見出し名"
-                                                className="w-full rounded-xl bg-zinc-950 p-3"
-                                            />
-                                        )}
-
-                                        {block.block_type === "member" && (
-                                            <div className="space-y-3">
-                                                <input
-                                                    value={block.performer_label ?? ""}
-                                                    onChange={(event) => updateBlock(block.id, { performer_label: event.target.value })}
-                                                    placeholder="表示ラベル 例: 全員 / 詩田/一ノ瀬"
-                                                    className="w-full rounded-xl bg-zinc-950 p-3"
-                                                />
-                                                <div className="flex flex-wrap gap-2 rounded-xl border border-zinc-800 p-3">
-                                                    {members.map((member) => {
-                                                        const checked = block.members.some((item) => item.id === member.id);
-                                                        return (
-                                                            <button
-                                                                key={member.id}
-                                                                type="button"
-                                                                onClick={() => toggleMember(block.id, member)}
-                                                                className="rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ring-white/10"
-                                                                style={{
-                                                                    backgroundColor: checked
-                                                                        ? (member.member_color_code ?? "#52525b")
-                                                                        : "#18181b",
-                                                                    color: checked
-                                                                        ? (member.lyric_display_color_code ?? "#ffffff")
-                                                                        : "#e4e4e7",
-                                                                }}
-                                                            >
-                                                                {member.name}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {block.block_type !== "section" && (
-                                            <textarea
-                                                value={block.body_markdown}
-                                                onChange={(event) => updateBlock(block.id, { body_markdown: event.target.value })}
-                                                placeholder={block.block_type === "call" ? "CALL本文" : "本文"}
-                                                className="min-h-[120px] w-full rounded-xl bg-zinc-950 p-3 font-mono text-sm"
-                                            />
-                                        )}
-
-                                        {block.block_type !== "section" && block.block_type !== "call" && (
-                                            <input
-                                                value={block.note ?? ""}
-                                                onChange={(event) => updateBlock(block.id, { note: event.target.value })}
-                                                placeholder="メモ"
-                                                className="w-full rounded-xl bg-zinc-950 p-3"
-                                            />
-                                        )}
-
-                                        <p className="text-xs text-zinc-500">
-                                            {block.block_type === "section" ? getSectionPreview(block) : "本文とメンバー構成を右の preview で確認できます。"}
-                                        </p>
-                                    </article>
+                                {blocks.map((block) => (
+                                    <SortableBlockItem
+                                        key={block.id}
+                                        block={block}
+                                        members={members}
+                                        isEditing={editingBlockId === block.id}
+                                        onEdit={setEditingBlockId}
+                                        onDone={() => setEditingBlockId(null)}
+                                        onDelete={deleteBlock}
+                                        onUpdate={updateBlock}
+                                        onToggleMember={toggleMember}
+                                    />
                                 ))}
                             </div>
-                        </div>
-
-                        <div className="max-h-[78vh] overflow-y-auto p-5">
-                            <p className="mb-3 text-sm font-semibold text-pink-300">Preview</p>
-                            <SongContentBlocks blocks={previewBlocks} members={members} />
-                        </div>
-                    </div>
+                        </SortableContext>
+                    </DndContext>
                 </>
             ) : (
                 <div className="grid gap-0 overflow-hidden rounded-2xl border border-zinc-800 lg:grid-cols-2">
