@@ -20,24 +20,24 @@ export default async function PortalPage() {
         {
             href: "/portal",
             title: "マイポータル",
-            description: "このアカウントに紐づく情報と、今後追加する履歴系機能の入口です。",
+            description: "近日公開予定です。。",
             symbol: "ME",
         },
         {
             href: "/portal",
             title: "連携アカウント",
-            description: "いま紐づいているログイン手段を確認できます。X を主軸にした設計です。",
+            description: "いま紐づいているログイン手段を確認できます。",
             symbol: "ID",
         },
         ...(isAdminAreaVisible
             ? [
-                  {
-                      href: "/portal/admin",
-                      title: "管理機能",
-                      description: "曲、ライブ、会場、お知らせなどの編集導線です。",
-                      symbol: "ADM",
-                  },
-              ]
+                {
+                    href: "/portal/admin",
+                    title: "管理機能",
+                    description: "曲、ライブ、会場、お知らせなどの編集導線です。",
+                    symbol: "ADM",
+                },
+            ]
             : []),
     ];
 
