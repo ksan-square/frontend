@@ -81,6 +81,22 @@ export type AdminSongDetailResponse = {
         song_id: string;
         body_markdown: string;
     } | null;
+    content_blocks: {
+        id: string;
+        order_no: number;
+        block_type: "section" | "member" | "call" | "note" | "other";
+        performer_label: string | null;
+        section_label: string | null;
+        body_markdown: string;
+        note: string | null;
+        members: {
+            id: string;
+            name: string;
+            member_color_name: string | null;
+            member_color_code: string | null;
+            lyric_display_color_code: string | null;
+        }[];
+    }[];
 };
 
 export type AdminLiveSummary = {
