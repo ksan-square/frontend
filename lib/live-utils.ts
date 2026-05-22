@@ -1,4 +1,5 @@
 type VenueLike = {
+    id?: string;
     name: string;
     area: string | null;
     google_map_url?: string | null;
@@ -7,6 +8,9 @@ type VenueLike = {
 type SetlistLike = {
     id: string;
     order_no: number;
+    entry_type: string;
+    display_label: string;
+    entry_title: string | null;
     note: string | null;
     song: {
         title: string;
@@ -38,6 +42,8 @@ export type LiveEventLike = {
     official_x_url: string | null;
     event_name: string;
     memo: string | null;
+    venue: VenueLike | null;
+    place_detail: string | null;
     schedule_items: LiveScheduleItemLike[];
 };
 
@@ -50,7 +56,7 @@ export function getScheduleItemLabel(item: LiveScheduleItemLike) {
         return item.item_title;
     }
 
-    return item.schedule_kind === "meet_and_greet" ? "Meet-and-greet" : "ライブ";
+    return item.schedule_kind === "meet_and_greet" ? "特典会" : "ライブ";
 }
 
 export function formatScheduleTime(item: LiveScheduleItemLike) {
@@ -81,7 +87,8 @@ export function formatSchedulePlace(item: LiveScheduleItemLike) {
 }
 
 export function getPrimaryVenue(event: LiveEventLike) {
-    return event.schedule_items.find((item) => item.schedule_kind === "live" && item.venue)?.venue
+    return event.venue
+        ?? event.schedule_items.find((item) => item.schedule_kind === "live" && item.venue)?.venue
         ?? event.schedule_items.find((item) => item.venue)?.venue
         ?? null;
 }
@@ -91,7 +98,12 @@ export function getScheduleSummaryLines(event: LiveEventLike) {
         id: item.id,
         label: getScheduleItemLabel(item),
         timeText: formatScheduleTime(item),
-        placeText: formatSchedulePlace(item),
+        placeText:
+            !item.venue && !item.place_detail
+                ? null
+                : item.venue?.id && event.venue?.id && item.venue.id === event.venue.id && !item.place_detail
+                  ? null
+                  : formatSchedulePlace(item),
         isLive: item.schedule_kind === "live",
         googleMapUrl: item.venue?.google_map_url ?? null,
         setlistItems: item.setlist_items ?? [],

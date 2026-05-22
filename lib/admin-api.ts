@@ -121,6 +121,13 @@ export async function getAdminLiveDetailByApi(liveId: string) {
             official_x_url: string | null;
             event_name: string;
             memo: string | null;
+            venue: {
+                id: string;
+                name: string;
+                area: string | null;
+                google_map_url: string | null;
+            } | null;
+            place_detail: string | null;
             schedule_items: {
                 id: string;
                 live_id: string;
@@ -140,6 +147,9 @@ export async function getAdminLiveDetailByApi(liveId: string) {
                 setlist_items: {
                     id: string;
                     order_no: number;
+                    entry_type: string;
+                    display_label: string;
+                    entry_title: string | null;
                     note: string | null;
                     song: {
                         id: string;
@@ -182,14 +192,32 @@ export async function deleteLiveByApi(liveId: string) {
     });
 }
 
-export async function addSetlistItem(liveId: string, payload: { song_id: string; note: string | null }) {
+export async function addSetlistItem(
+    liveId: string,
+    payload: {
+        entry_type: "song" | "talk" | "photo_time" | "other";
+        display_label: string;
+        entry_title: string | null;
+        song_id: string | null;
+        note: string | null;
+    },
+) {
     return adminFetch<{ id: string }>(`/api/v1/admin/schedule-items/${liveId}/setlist-items`, {
         method: "POST",
         body: JSON.stringify(payload),
     });
 }
 
-export async function updateSetlistItem(itemId: string, payload: { note: string | null }) {
+export async function updateSetlistItem(
+    itemId: string,
+    payload: {
+        entry_type: "song" | "talk" | "photo_time" | "other";
+        display_label: string;
+        entry_title: string | null;
+        song_id: string | null;
+        note: string | null;
+    },
+) {
     return adminFetch<{ success: boolean }>(`/api/v1/admin/setlist-items/${itemId}`, {
         method: "PATCH",
         body: JSON.stringify(payload),

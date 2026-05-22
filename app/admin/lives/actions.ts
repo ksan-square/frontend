@@ -27,6 +27,12 @@ export async function updateLive(id: string, formData: FormData) {
         memo: formData.get("memo")
             ? String(formData.get("memo"))
             : null,
+        venue_id: formData.get("venue_id")
+            ? String(formData.get("venue_id"))
+            : null,
+        place_detail: formData.get("place_detail")
+            ? String(formData.get("place_detail"))
+            : null,
     };
     const response = await fetch(`${getApiBaseUrl()}/api/v1/admin/lives/${id}`, {
         method: "PATCH",

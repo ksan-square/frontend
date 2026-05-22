@@ -6,9 +6,14 @@ import { updateLive } from "./actions";
 
 type LiveFormProps = {
     initialData: AdminLiveSummary;
+    venues: {
+        id: string;
+        name: string;
+        area: string | null;
+    }[];
 };
 
-export default function LiveForm({ initialData }: LiveFormProps) {
+export default function LiveForm({ initialData, venues }: LiveFormProps) {
     const router = useRouter();
 
     async function handleSubmit(formData: FormData) {
@@ -39,6 +44,27 @@ export default function LiveForm({ initialData }: LiveFormProps) {
                 name="event_name"
                 defaultValue={initialData?.event_name ?? ""}
                 placeholder="イベント名"
+                className="w-full rounded-xl bg-zinc-900 p-3"
+            />
+
+            <select
+                name="venue_id"
+                defaultValue={initialData.venue?.id ?? ""}
+                className="w-full rounded-xl bg-zinc-900 p-3"
+            >
+                <option value="">基準会場を未設定</option>
+                {venues.map((venue) => (
+                    <option key={venue.id} value={venue.id}>
+                        {venue.name}
+                        {venue.area ? ` / ${venue.area}` : ""}
+                    </option>
+                ))}
+            </select>
+
+            <input
+                name="place_detail"
+                defaultValue={initialData.place_detail ?? ""}
+                placeholder="親ライブの場所補足 例: メインステージ"
                 className="w-full rounded-xl bg-zinc-900 p-3"
             />
 

@@ -61,6 +61,7 @@ export default async function EditPage({
 
             <LiveForm
                 initialData={live}
+                venues={venues}
             />
 
             <ScheduleItemsEditor

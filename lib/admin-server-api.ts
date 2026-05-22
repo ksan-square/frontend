@@ -93,6 +93,13 @@ export type AdminLiveSummary = {
     official_x_url: string | null;
     event_name: string;
     memo: string | null;
+    venue: {
+        id: string;
+        name: string;
+        area: string | null;
+        google_map_url: string | null;
+    } | null;
+    place_detail: string | null;
     schedule_items: {
         id: string;
         live_id: string;
@@ -112,6 +119,9 @@ export type AdminLiveSummary = {
         setlist_items: {
             id: string;
             order_no: number;
+            entry_type: string;
+            display_label: string;
+            entry_title: string | null;
             note: string | null;
             song: {
                 id: string;

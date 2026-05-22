@@ -34,6 +34,9 @@ type ScheduleItem = {
     setlist_items: {
         id: string;
         order_no: number;
+        entry_type: string;
+        display_label: string;
+        entry_title: string | null;
         note: string | null;
         song: {
             id: string;
@@ -104,7 +107,7 @@ function ScheduleItemFormFields({
                 className="w-full rounded-xl bg-zinc-950 p-3"
             >
                 <option value="live">ライブ</option>
-                <option value="meet_and_greet">Meet-and-greet</option>
+                <option value="meet_and_greet">特典会</option>
             </select>
 
             <input
@@ -140,7 +143,7 @@ function ScheduleItemFormFields({
                 defaultValue={initialData.venue_id ?? ""}
                 className="w-full rounded-xl bg-zinc-950 p-3"
             >
-                <option value="">会場未設定</option>
+                <option value="">親ライブと同じ / 個別指定なし</option>
                 {venues.map((venue) => (
                     <option key={venue.id} value={venue.id}>
                         {venue.name}
@@ -198,7 +201,7 @@ function ScheduleItemCard({
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                         <h3 className="text-xl font-black text-white">
-                        {item.item_title || (item.schedule_kind === "meet_and_greet" ? "Meet-and-greet" : "ライブ")}
+                        {item.item_title || (item.schedule_kind === "meet_and_greet" ? "特典会" : "ライブ")}
                     </h3>
                     <p className="mt-1 text-sm text-zinc-400">
                         kind: {item.schedule_kind} / order: {item.order_no}
@@ -249,8 +252,11 @@ function ScheduleItemCard({
                     initialItems={item.setlist_items.map((setlistItem) => ({
                         id: setlistItem.id,
                         order_no: setlistItem.order_no,
+                        entry_type: setlistItem.entry_type as "song" | "talk" | "photo_time" | "other",
+                        display_label: setlistItem.display_label,
+                        entry_title: setlistItem.entry_title,
                         note: setlistItem.note,
-                        songs: setlistItem.song
+                        song: setlistItem.song
                             ? {
                                   id: setlistItem.song.id,
                                   title: setlistItem.song.title,
