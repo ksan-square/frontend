@@ -8,7 +8,9 @@ type QueryValue = string | number | null | undefined;
 
 function getApiBaseUrl() {
     return (
+        process.env.API_URL ??
         process.env.FASTAPI_BASE_URL ??
+        process.env.NEXT_PUBLIC_API_URL ??
         process.env.NEXT_PUBLIC_FASTAPI_BASE_URL ??
         "http://127.0.0.1:8000"
     );
