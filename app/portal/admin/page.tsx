@@ -14,31 +14,31 @@ export default async function PortalAdminPage() {
 
     const links = [
         {
-            href: "/admin/members",
+            href: "/editor/members",
             title: "メンバー管理",
             description: "表示順、カラー、紹介文を整えます。",
             symbol: "MBR",
         },
         {
-            href: "/admin/songs",
+            href: "/editor/songs",
             title: "曲管理",
             description: "曲情報、歌詞、コールの編集を進めます。",
             symbol: "♪",
         },
         {
-            href: "/admin/venues",
+            href: "/editor/venues",
             title: "会場管理",
             description: "検索しやすい会場情報をまとめます。",
             symbol: "MAP",
         },
         {
-            href: "/admin/lives",
+            href: "/editor/lives",
             title: "ライブ管理",
             description: "予定、履歴、セトリをひとつの流れで管理します。",
             symbol: "LIVE",
         },
         {
-            href: "/admin/notices",
+            href: "/editor/notices",
             title: "お知らせ管理",
             description: "公開内容と掲載タイミングを調整します。",
             symbol: "NEWS",

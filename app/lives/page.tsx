@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
+import PageHero from "@/app/_components/page-hero";
 import Pagination from "@/app/_components/pagination";
 import {
   formatMonthLabel,
@@ -92,16 +93,11 @@ export default async function LivesPage({
     <main className="space-y-10">
       <Breadcrumbs items={[{ label: "ライブ" }]} />
 
-      <section className="relative overflow-hidden bg-black p-6 shadow-2xl shadow-black/30 ring-1 ring-white/10 md:p-8">
-        <div className="editorial-rule absolute inset-x-0 top-0 h-1" />
-        <p className="inline-flex bg-white px-3 py-1 text-xs font-black uppercase text-black">Lives</p>
-
-        <h1 className="mt-5 text-4xl font-black text-white md:text-5xl">ライブ予定・履歴</h1>
-
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-300 md:text-base">
-          次回のライブ予定の確認と、過去ライブのセトリの確認ができます。
-        </p>
-      </section>
+      <PageHero
+        badge="Lives"
+        title="ライブ予定・履歴"
+        description="次回のライブ予定の確認と、過去ライブのセトリの確認ができます。"
+      />
 
       <section className="space-y-4">
         <div>

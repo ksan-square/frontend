@@ -1,4 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
+import { getApiBaseUrl } from "@/lib/public-api";
 
 type AdminFetchInit = Omit<RequestInit, "headers"> & {
     headers?: Record<string, string>;
@@ -6,21 +7,16 @@ type AdminFetchInit = Omit<RequestInit, "headers"> & {
 
 type QueryValue = string | number | null | undefined;
 
-function getApiBaseUrl() {
-    return (
-        process.env.API_URL ??
-        process.env.FASTAPI_BASE_URL ??
-        process.env.NEXT_PUBLIC_API_URL ??
-        process.env.NEXT_PUBLIC_FASTAPI_BASE_URL ??
-        "http://127.0.0.1:8000"
-    );
-}
+let _browserSupabase: ReturnType<typeof createBrowserClient> | null = null;
 
 function getBrowserSupabase() {
-    return createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    );
+    if (!_browserSupabase) {
+        _browserSupabase = createBrowserClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+        );
+    }
+    return _browserSupabase;
 }
 
 async function getAccessToken() {
@@ -31,55 +27,24 @@ async function getAccessToken() {
     return session?.access_token ?? null;
 }
 
-async function adminFetch<T>(path: string, init: AdminFetchInit = {}): Promise<T> {
-    const token = await getAccessToken();
-    if (!token) {
-        throw new Error("ログインが必要です。");
-    }
-
-    const response = await fetch(new URL(path, getApiBaseUrl()), {
-        ...init,
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-            ...(init.headers ?? {}),
-        },
-    });
-
-    if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || `Request failed: ${response.status}`);
-    }
-
-    if (response.status === 204) {
-        return undefined as T;
-    }
-
-    return response.json() as Promise<T>;
-}
-
-function buildAdminUrl(path: string, query?: Record<string, QueryValue>) {
-    const url = new URL(path, getApiBaseUrl());
-    Object.entries(query ?? {}).forEach(([key, value]) => {
-        if (value === null || value === undefined || value === "") {
-            return;
-        }
-        url.searchParams.set(key, String(value));
-    });
-    return url.toString();
-}
-
-async function adminFetchWithQuery<T>(
+async function adminFetch<T>(
     path: string,
-    query?: Record<string, QueryValue>,
     init: AdminFetchInit = {},
+    query?: Record<string, QueryValue>,
 ): Promise<T> {
     const token = await getAccessToken();
     if (!token) {
         throw new Error("ログインが必要です。");
     }
 
-    const response = await fetch(buildAdminUrl(path, query), {
+    const url = new URL(path, getApiBaseUrl());
+    Object.entries(query ?? {}).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== "") {
+            url.searchParams.set(key, String(value));
+        }
+    });
+
+    const response = await fetch(url.toString(), {
         ...init,
         headers: {
             "Content-Type": "application/json",
@@ -149,13 +114,13 @@ export async function saveSongMarkdown(songId: string, body_markdown: string) {
 
 export async function saveSongContentBlocks(
     songId: string,
-        items: {
-            id?: string | null;
-            block_type: "section" | "member" | "call" | "note" | "other";
-            order_no: number;
-            performer_label: string | null;
-            section_label: string | null;
-            body_markdown: string;
+    items: {
+        id?: string | null;
+        block_type: "section" | "member" | "call" | "note" | "other";
+        order_no: number;
+        performer_label: string | null;
+        section_label: string | null;
+        body_markdown: string;
         note: string | null;
         members: {
             member_id: string;
@@ -356,7 +321,7 @@ export async function searchVenues(params?: {
     q?: string | null;
     limit?: number;
 }) {
-    return adminFetchWithQuery<{
+    return adminFetch<{
         items: {
             id: string;
             name: string;
@@ -364,7 +329,7 @@ export async function searchVenues(params?: {
             address: string | null;
             google_map_url: string | null;
         }[];
-    }>("/api/v1/admin/venues", params);
+    }>("/api/v1/admin/venues", {}, params);
 }
 
 export async function updateVenue(venueId: string, payload: Record<string, unknown>) {
