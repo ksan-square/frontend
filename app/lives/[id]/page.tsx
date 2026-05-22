@@ -255,6 +255,7 @@ export default async function LiveDetailPage({ params }: Props) {
                                     const visibleTitle =
                                         visibleSong?.title
                                         ?? setlistItem.entry_title
+                                        ?? setlistItem.display_label
                                         ?? "項目未設定";
 
                                     return (

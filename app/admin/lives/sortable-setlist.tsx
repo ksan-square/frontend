@@ -40,6 +40,19 @@ type DraftValues = {
     note: string;
 };
 
+function getDefaultEntryTitle(entryType: DraftValues["entry_type"]) {
+    switch (entryType) {
+        case "talk":
+            return "MC";
+        case "photo_time":
+            return "写真撮影タイム";
+        case "other":
+            return "その他";
+        default:
+            return "";
+    }
+}
+
 function getDisplayTitle(item: Item) {
     if (item.entry_type === "song") {
         return item.song?.title ?? "曲未設定";
@@ -116,14 +129,19 @@ function SortableItem({
                     <select
                         value={draft.entry_type}
                         onChange={(event) =>
-                            setDraft((current) => ({
-                                ...current,
-                                entry_type: event.target.value as DraftValues["entry_type"],
-                                entry_title:
-                                    event.target.value === "photo_time" && !current.entry_title
-                                        ? "写真撮影タイム"
+                            setDraft((current) => {
+                                const nextEntryType = event.target.value as DraftValues["entry_type"];
+                                const shouldResetEntryTitle =
+                                    current.entry_type === "song" || !current.entry_title.trim();
+
+                                return {
+                                    ...current,
+                                    entry_type: nextEntryType,
+                                    entry_title: shouldResetEntryTitle
+                                        ? getDefaultEntryTitle(nextEntryType)
                                         : current.entry_title,
-                            }))
+                                };
+                            })
                         }
                         className="w-full rounded-xl bg-zinc-900 p-3"
                     >
