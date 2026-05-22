@@ -104,7 +104,7 @@ const rules: DecorationRule[] = [
             return (
                 <span
                     key={key}
-                    className="inline-flex flex-col items-start gap-0.5 whitespace-pre-wrap align-top"
+                    className="flex flex-col items-start gap-1 whitespace-pre-wrap"
                     style={{
                         color:
                             firstMember?.lyric_display_color_code ??
@@ -128,10 +128,10 @@ const rules: DecorationRule[] = [
             return (
                 <span
                     key={key}
-                    className="inline-flex items-baseline gap-2 whitespace-pre-wrap align-baseline"
+                    className="flex flex-col items-start gap-1 whitespace-pre-wrap"
                 >
-                    <span className="shrink-0 text-[11px] font-black text-fuchsia-300">
-                        CALL
+                    <span className="block text-[11px] font-black text-fuchsia-300">
+                        [CALL]
                     </span>
                     <span className="leading-snug font-semibold text-zinc-300">
                         {children}

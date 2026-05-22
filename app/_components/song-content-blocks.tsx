@@ -126,10 +126,10 @@ export default function SongContentBlocks({
                     const hasMultipleTags = tags.length >= 2;
                     return (
                         <section key={block.id} className="space-y-2">
-                            <div className="grid grid-cols-[minmax(132px,180px)_minmax(0,1fr)] items-start gap-x-3">
+                            <div className="grid grid-cols-1 items-start gap-2 md:grid-cols-[minmax(132px,180px)_minmax(0,1fr)] md:gap-x-3">
                                 {tags.length > 0 && (
                                     <div
-                                        className={`grid content-start gap-2 pt-1 ${
+                                        className={`grid content-start gap-2 ${
                                             hasMultipleTags
                                                 ? "grid-flow-col auto-cols-max grid-rows-2"
                                                 : "grid-cols-1"
@@ -164,8 +164,8 @@ export default function SongContentBlocks({
                             key={block.id}
                             className="rounded-sm bg-white/[0.04] px-4 py-3 ring-1 ring-white/6"
                         >
-                            <div className="grid grid-cols-[minmax(132px,180px)_minmax(0,1fr)] items-start gap-x-3">
-                                <div className="flex min-h-[32px] items-start pt-1">
+                            <div className="grid grid-cols-1 items-start gap-2 md:grid-cols-[minmax(132px,180px)_minmax(0,1fr)] md:gap-x-3">
+                                <div className="flex min-h-[32px] items-start">
                                     <span className="rounded-sm bg-fuchsia-400/12 px-2 py-1 text-[11px] font-black uppercase text-fuchsia-200">
                                         [CALL]
                                     </span>
