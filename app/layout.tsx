@@ -2,32 +2,70 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import GoogleAnalytics from "@/app/_components/google-analytics";
+import JsonLd from "@/app/_components/json-ld";
 import ToastViewport from "@/app/_components/toast-viewport";
-import { DEFAULT_DESCRIPTION, SITE_NAME, createMetadataBase } from "@/lib/seo";
+import {
+  DEFAULT_DESCRIPTION,
+  SITE_LOGO_PATH,
+  SITE_NAME,
+  SITE_OG_IMAGE_PATH,
+  buildAbsoluteUrl,
+  createMetadataBase,
+} from "@/lib/seo";
 import "./globals.css";
+
+const siteUrl = createMetadataBase().toString();
+const absoluteLogoUrl = buildAbsoluteUrl(SITE_LOGO_PATH);
+const absoluteOgImageUrl = buildAbsoluteUrl(SITE_OG_IMAGE_PATH);
 
 export const metadata: Metadata = {
   metadataBase: createMetadataBase(),
   title: {
-    default: SITE_NAME,
+    default: `${SITE_NAME} | 宵越しのアンサンブル 非公式ファンコミュニティ`,
     template: `%s | ${SITE_NAME}`,
   },
   description: DEFAULT_DESCRIPTION,
+  icons: {
+    icon: [
+      {
+        url: SITE_LOGO_PATH,
+        type: "image/png",
+        sizes: "1024x1024",
+      },
+    ],
+    apple: [
+      {
+        url: SITE_LOGO_PATH,
+        type: "image/png",
+        sizes: "1024x1024",
+      },
+    ],
+    shortcut: [SITE_LOGO_PATH],
+  },
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: SITE_NAME,
+    title: `${SITE_NAME} | 宵越しのアンサンブル 非公式ファンコミュニティ`,
     description: DEFAULT_DESCRIPTION,
     url: "/",
     siteName: SITE_NAME,
     locale: "ja_JP",
     type: "website",
+    images: [
+      {
+        url: SITE_OG_IMAGE_PATH,
+        width: 1672,
+        height: 941,
+        alt: "こしあんスクエア",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: SITE_NAME,
+    title: `${SITE_NAME} | 宵越しのアンサンブル 非公式ファンコミュニティ`,
     description: DEFAULT_DESCRIPTION,
+    images: [SITE_OG_IMAGE_PATH],
   },
   verification: {
     google: "PSvxFLOZNFQgjOfJF5XwONxoY5bIXCnZ4qJDLqxzxLg",
@@ -39,9 +77,39 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE_NAME,
+    url: siteUrl,
+    description: DEFAULT_DESCRIPTION,
+    inLanguage: "ja",
+  };
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: SITE_NAME,
+    url: siteUrl,
+    logo: {
+      "@type": "ImageObject",
+      url: absoluteLogoUrl,
+      width: 1024,
+      height: 1024,
+    },
+    image: {
+      "@type": "ImageObject",
+      url: absoluteOgImageUrl,
+      width: 1672,
+      height: 941,
+    },
+    description: DEFAULT_DESCRIPTION,
+  };
+
   return (
     <html lang="ja">
       <body className="site-shell min-h-screen overflow-x-hidden text-zinc-100 antialiased">
+        <JsonLd data={websiteJsonLd} />
+        <JsonLd data={organizationJsonLd} />
         <header className="sticky top-0 z-50 border-b border-white/10 bg-black/92 backdrop-blur-md">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
             <Link href="/" className="group flex items-center gap-3">
@@ -110,7 +178,7 @@ export default function RootLayout({
             <div className="space-y-2">
               <p className="text-sm font-semibold text-white">{SITE_NAME}</p>
               <p className="max-w-2xl text-sm leading-7 text-zinc-400">
-                宵越しのアンサンブルの非公式ファンデータベースです。
+                宵越しのアンサンブルのライブ情報、セトリ、コール、歌割、Wikiをまとめた非公式ファンコミュニティです。
               </p>
             </div>
 
@@ -127,9 +195,9 @@ export default function RootLayout({
             </nav>
           </div>
         </footer>
+        <GoogleAnalytics />
         <ToastViewport />
       </body>
-      <GoogleAnalytics />
     </html>
   );
 }

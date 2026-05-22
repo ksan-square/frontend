@@ -15,7 +15,7 @@ import { getPublicLives } from "@/lib/public-api";
 export const metadata: Metadata = {
   title: "ライブ予定・履歴",
   description:
-    "今後のライブ予定と過去ライブ履歴、会場情報、セトリを確認できるページです。",
+    "宵越しのアンサンブルのライブ情報・セトリ一覧ページ。過去ライブのセットリストや会場情報、出演履歴を確認できます。",
   alternates: {
     canonical: "/lives",
   },

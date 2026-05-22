@@ -10,7 +10,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 export const metadata: Metadata = {
     title: "Wiki",
     description:
-        "現場メモや共有情報をブログ形式で読める Wiki 一覧ページです。",
+        "宵越しのアンサンブルに関するWiki・用語・ライブ情報をまとめた非公式ファンWiki。メンバー情報や現場用語も掲載。",
     alternates: {
         canonical: "/wiki",
     },
