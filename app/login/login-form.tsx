@@ -29,14 +29,20 @@ export default function LoginForm() {
 
     const logAuthDebug = useCallback(
         (event: string, detail: Record<string, unknown>) => {
-            console.error(`[auth-debug] ${event}`, {
+            const payload = {
                 ...detail,
                 origin: typeof window !== "undefined" ? window.location.origin : null,
                 redirectedFrom,
                 supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? null,
                 supabaseKeyPrefix:
                     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.slice(0, 24) ?? null,
-            });
+            };
+
+            console.error(`[auth-debug] ${event}`, payload);
+            console.error(
+                `[auth-debug-json] ${event}`,
+                JSON.stringify(payload, null, 2),
+            );
         },
         [redirectedFrom],
     );
