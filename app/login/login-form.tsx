@@ -48,6 +48,24 @@ export default function LoginForm() {
     );
 
     useEffect(() => {
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((event, session) => {
+            logAuthDebug("auth_state_changed", {
+                event,
+                hasSession: Boolean(session),
+                hasAccessToken: Boolean(session?.access_token),
+                userId: session?.user?.id ?? null,
+                userEmail: session?.user?.email ?? null,
+            });
+        });
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [logAuthDebug, supabase.auth]);
+
+    useEffect(() => {
         if (authError !== "oauth_callback_failed" && authError !== "missing_code") {
             return;
         }
@@ -66,7 +84,7 @@ export default function LoginForm() {
         event.preventDefault();
         setIsSubmitting(true);
 
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
         });
@@ -87,6 +105,20 @@ export default function LoginForm() {
             });
             return;
         }
+
+        const {
+            data: { session: restoredSession },
+        } = await supabase.auth.getSession();
+
+        logAuthDebug("password_login_succeeded", {
+            email,
+            hasSessionInResponse: Boolean(data.session),
+            hasAccessTokenInResponse: Boolean(data.session?.access_token),
+            userIdInResponse: data.session?.user?.id ?? null,
+            hasRestoredSession: Boolean(restoredSession),
+            hasRestoredAccessToken: Boolean(restoredSession?.access_token),
+            restoredUserId: restoredSession?.user?.id ?? null,
+        });
 
         showToast({
             text: "ログインしました。",
