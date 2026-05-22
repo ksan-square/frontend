@@ -28,7 +28,7 @@ export default async function LoginPage() {
                     ポータルログイン
                 </h1>
                 <p className="max-w-2xl text-sm leading-7 text-zinc-300 md:text-base">
-                    ファン、メンバー、編集担当、管理者の入口をひとつにまとめています。ログイン後は権限に応じて使える機能が切り替わります。
+                    一般ユーザー、メンバー、編集担当、管理者の入口をひとつにまとめています。ログイン後は権限に応じて使える機能が切り替わります。
                 </p>
             </section>
 

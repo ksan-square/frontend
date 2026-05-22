@@ -10,7 +10,7 @@ export default async function PortalPage() {
     const me = await getPortalMe();
     const isAdminAreaVisible = me.profile.role === "admin" || me.profile.role === "editor";
     const roleLabelMap = {
-        viewer: "ファン",
+        viewer: "一般ユーザー",
         member: "メンバー",
         editor: "編集担当",
         admin: "管理者",
