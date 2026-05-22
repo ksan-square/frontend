@@ -34,7 +34,7 @@ export default async function PortalPage() {
                 {
                     href: "/portal/admin",
                     title: "管理機能",
-                    description: "曲、ライブ、会場、お知らせなどの編集導線です。",
+                    description: "曲、ライブ、お知らせなどの編集機能です。",
                     symbol: "ADM",
                 },
             ]
