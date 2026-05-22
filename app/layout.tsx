@@ -110,7 +110,7 @@ export default function RootLayout({
             <div className="space-y-2">
               <p className="text-sm font-semibold text-white">{SITE_NAME}</p>
               <p className="max-w-2xl text-sm leading-7 text-zinc-400">
-                非公式ファンデータベースとして、曲・ライブ・Wiki を見やすくまとめています。
+                宵越しのアンサンブルの非公式ファンデータベースです。
               </p>
             </div>
 
