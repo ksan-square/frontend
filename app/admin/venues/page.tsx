@@ -36,12 +36,21 @@ export default async function VenuesPage() {
                         </p>
                     </div>
 
-                    <Link
-                        href="/admin/venues/new"
-                        className="w-fit rounded-md bg-violet-500 px-5 py-3 text-sm font-black text-white hover:bg-violet-400"
-                    >
-                        新規追加
-                    </Link>
+                    <div className="flex flex-wrap gap-3">
+                        <Link
+                            href="/admin/venues/new"
+                            className="w-fit rounded-md bg-violet-500 px-5 py-3 text-sm font-black text-white hover:bg-violet-400"
+                        >
+                            新規追加
+                        </Link>
+
+                        <Link
+                            href="/admin/venues/import"
+                            className="w-fit rounded-md bg-zinc-900 px-5 py-3 text-sm font-black text-white ring-1 ring-white/10 hover:bg-white hover:text-black"
+                        >
+                            一括インポート
+                        </Link>
+                    </div>
                 </div>
             </section>
 

@@ -4,11 +4,11 @@ import Breadcrumbs from "@/app/_components/breadcrumbs";
 import Pagination from "@/app/_components/pagination";
 import {
   formatMonthLabel,
-  formatTime,
   formatWeekLabel,
   getMonthKey,
   getWeekKey,
 } from "@/lib/date-time";
+import { getPrimaryVenue, getScheduleSummaryLines } from "@/lib/live-utils";
 import { createPathWithQuery, getPaginationRange, parseMonthParam, parsePageParam } from "@/lib/page-utils";
 import { getPublicLives } from "@/lib/public-api";
 
@@ -30,6 +30,7 @@ const PAGE_SIZE = 20;
 type SearchParams = Promise<{
   month?: string | string[];
   page?: string | string[];
+  upcoming_page?: string | string[];
 }>;
 
 function createLivesHref(month?: string | null) {
@@ -44,11 +45,13 @@ export default async function LivesPage({
   const params = await searchParams;
   const selectedMonth = parseMonthParam(params.month);
   const requestedPage = parsePageParam(params.page);
+  const requestedUpcomingPage = parsePageParam(params.upcoming_page);
   let payload;
   try {
     payload = await getPublicLives({
       month: selectedMonth,
       page: requestedPage,
+      upcoming_page: requestedUpcomingPage,
     });
   } catch (error) {
     return (
@@ -115,27 +118,8 @@ export default async function LivesPage({
         )}
 
         {upcomingLives.map((live) => {
-          const venue = live.venue;
-          const benefitVenue = live.benefit_venue ?? venue;
-          const liveStartTime = formatTime(live.live_start_time);
-          const liveEndTime = formatTime(live.live_end_time);
-          const benefitStartTime = formatTime(live.benefit_meeting_start_time);
-          const benefitEndTime = formatTime(live.benefit_meeting_end_time);
-          const benefitPlaceText = benefitVenue?.name
-            ? `${benefitVenue.name}${benefitVenue.area ? ` / ${benefitVenue.area}` : ""}${live.benefit_meeting_place_detail ? ` / ${live.benefit_meeting_place_detail}` : ""}`
-            : (live.benefit_meeting_place_detail ?? "会場未定");
-          const liveTimeText = liveStartTime
-            ? liveEndTime
-              ? `${liveStartTime}-${liveEndTime}`
-              : `${liveStartTime} 開演`
-            : "時間未定";
-          const benefitTimeText = live.benefit_meeting_time_note
-            ? live.benefit_meeting_time_note
-            : benefitStartTime
-              ? benefitEndTime
-                ? `${benefitStartTime}-${benefitEndTime}`
-                : `${benefitStartTime} 開始予定`
-              : "未定";
+          const venue = getPrimaryVenue(live);
+          const scheduleLines = getScheduleSummaryLines(live);
 
           return (
             <div
@@ -146,20 +130,24 @@ export default async function LivesPage({
                 <div>
                   <p className="text-sm font-black text-fuchsia-300">
                     {live.live_date}
-                    {` / ${liveTimeText}`}
+                    {live.start_time && ` / ${live.start_time.slice(0, 5)}${live.end_time ? `-${live.end_time.slice(0, 5)}` : ""}`}
                   </p>
 
                   <h3 className="mt-1 text-2xl font-black text-white">{live.event_name}</h3>
 
                   <p className="mt-2 text-sm text-zinc-400">
-                    ライブ会場: {venue?.name ?? "会場未登録"}
+                    会場: {venue?.name ?? "会場未登録"}
                     {venue?.area && ` / ${venue.area}`}
                   </p>
 
-                  <p className="mt-1 text-sm text-zinc-400">
-                    特典会: {benefitTimeText}
-                    {benefitPlaceText && ` / ${benefitPlaceText}`}
-                  </p>
+                  <div className="mt-2 space-y-1 text-sm text-zinc-400">
+                    {scheduleLines.map((line) => (
+                      <p key={line.id}>
+                        {line.label}: {line.timeText}
+                        {line.placeText && ` / ${line.placeText}`}
+                      </p>
+                    ))}
+                  </div>
 
                   <div className="mt-3 flex flex-wrap gap-2">
                     {live.ticket_url && (
@@ -197,6 +185,14 @@ export default async function LivesPage({
           );
         })}
       </section>
+
+      <Pagination
+        basePath="/lives"
+        currentPage={payload.upcoming_pagination.page}
+        totalPages={payload.upcoming_pagination.total_pages}
+        query={{ month: selectedMonth, page: currentPage > 1 ? String(currentPage) : null }}
+        pageParamName="upcoming_page"
+      />
 
       <section className="surface-subtle space-y-3 p-4">
         <div>
@@ -252,7 +248,8 @@ export default async function LivesPage({
         )}
 
         {historyLives.map(({ live, month, shouldShowMonth, shouldShowWeek }) => {
-          const venue = live.venue;
+          const venue = getPrimaryVenue(live);
+          const scheduleLines = getScheduleSummaryLines(live);
 
           return (
             <div key={live.id} className="space-y-3">
@@ -273,8 +270,8 @@ export default async function LivesPage({
                   <div>
                     <p className="text-sm font-black text-fuchsia-300 group-hover:text-violet-700">
                       {live.live_date}
-                      {live.live_start_time &&
-                        ` / ${formatTime(live.live_start_time)}${live.live_end_time ? `-${formatTime(live.live_end_time)}` : ""}`}
+                      {live.start_time &&
+                        ` / ${live.start_time.slice(0, 5)}${live.end_time ? `-${live.end_time.slice(0, 5)}` : ""}`}
                     </p>
 
                     <h3 className="mt-1 text-xl font-black text-white group-hover:text-black">
@@ -285,6 +282,14 @@ export default async function LivesPage({
                       {venue?.name ?? "会場未登録"}
                       {venue?.area && ` / ${venue.area}`}
                     </p>
+
+                    <div className="mt-2 space-y-1 text-sm text-zinc-400 group-hover:text-zinc-700">
+                      {scheduleLines.slice(0, 3).map((line) => (
+                        <p key={line.id}>
+                          {line.label}: {line.timeText}
+                        </p>
+                      ))}
+                    </div>
 
                     {venue?.google_map_url && (
                       <a
@@ -315,7 +320,7 @@ export default async function LivesPage({
         basePath="/lives"
         currentPage={currentPage}
         totalPages={totalPages}
-        query={{ month: selectedMonth }}
+        query={{ month: selectedMonth, upcoming_page: payload.upcoming_pagination.page > 1 ? String(payload.upcoming_pagination.page) : null }}
       />
     </main>
   );

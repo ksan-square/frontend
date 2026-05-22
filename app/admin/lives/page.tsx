@@ -2,7 +2,8 @@ import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import Pagination from "@/app/_components/pagination";
 import DeleteButton from "./delete-button";
-import { formatTime, formatWeekLabel, getMonthKey, getWeekKey } from "@/lib/date-time";
+import { formatWeekLabel, getMonthKey, getWeekKey } from "@/lib/date-time";
+import { getPrimaryVenue, getScheduleSummaryLines } from "@/lib/live-utils";
 import { createPathWithQuery, getPaginationRange, parseMonthParam, parsePageParam } from "@/lib/page-utils";
 import { getAdminLives, type AdminLiveSummary } from "@/lib/admin-server-api";
 
@@ -15,6 +16,7 @@ const PAGE_SIZE = 20;
 type SearchParams = Promise<{
     month?: string | string[];
     page?: string | string[];
+    upcoming_page?: string | string[];
 }>;
 
 function createLivesHref({
@@ -31,13 +33,8 @@ function createLivesHref({
 }
 
 function getVenueText(live: AdminLiveSummary) {
-    const venue = live.venue;
+    const venue = getPrimaryVenue(live);
     return `${venue?.name ?? "会場未登録"}${venue?.area ? ` / ${venue.area}` : ""}`;
-}
-
-function getBenefitVenueText(live: AdminLiveSummary) {
-    const benefitVenue = live.benefit_venue ?? live.venue;
-    return `${benefitVenue?.name ?? "会場未定"}${benefitVenue?.area ? ` / ${benefitVenue.area}` : ""}`;
 }
 
 export default async function AdminLivesPage({
@@ -48,12 +45,14 @@ export default async function AdminLivesPage({
     const params = await searchParams;
     const selectedMonth = parseMonthParam(params.month);
     const requestedPage = parsePageParam(params.page);
+    const requestedUpcomingPage = parsePageParam(params.upcoming_page);
 
     let payload;
     try {
         payload = await getAdminLives({
             month: selectedMonth,
             page: requestedPage,
+            upcoming_page: requestedUpcomingPage,
         });
     } catch (error) {
         return <main>取得失敗: {error instanceof Error ? error.message : "unknown error"}</main>;
@@ -117,11 +116,7 @@ export default async function AdminLivesPage({
                 )}
 
                 {upcomingLives.map((live) => {
-                    const liveTimeText = live.live_start_time
-                        ? live.live_end_time
-                            ? `${formatTime(live.live_start_time)}-${formatTime(live.live_end_time)}`
-                            : `${formatTime(live.live_start_time)} 開演`
-                        : "時間未定";
+                    const scheduleLines = getScheduleSummaryLines(live);
 
                     return (
                         <div
@@ -131,18 +126,24 @@ export default async function AdminLivesPage({
                             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                                 <div>
                                     <p className="text-sm font-semibold text-fuchsia-300 group-hover:text-violet-700">
-                                        {live.live_date} / {liveTimeText}
+                                        {live.live_date}
+                                        {live.start_time && ` / ${live.start_time.slice(0, 5)}${live.end_time ? `-${live.end_time.slice(0, 5)}` : ""}`}
                                     </p>
 
                                     <h3 className="mt-2 text-xl font-black text-white group-hover:text-black">{live.event_name}</h3>
 
                                     <p className="mt-2 text-sm text-zinc-400 group-hover:text-zinc-700">
-                                        ライブ会場: {getVenueText(live)}
+                                        会場: {getVenueText(live)}
                                     </p>
 
-                                    <p className="mt-1 text-sm text-zinc-400 group-hover:text-zinc-700">
-                                        特典会会場: {getBenefitVenueText(live)}
-                                    </p>
+                                    <div className="mt-2 space-y-1 text-sm text-zinc-400 group-hover:text-zinc-700">
+                                        {scheduleLines.map((line) => (
+                                            <p key={line.id}>
+                                                {line.label}: {line.timeText}
+                                                {line.placeText && ` / ${line.placeText}`}
+                                            </p>
+                                        ))}
+                                    </div>
                                 </div>
 
                                 <div className="flex gap-2">
@@ -160,6 +161,14 @@ export default async function AdminLivesPage({
                     );
                 })}
             </section>
+
+            <Pagination
+                basePath="/admin/lives"
+                currentPage={payload.upcoming_pagination.page}
+                totalPages={payload.upcoming_pagination.total_pages}
+                query={{ month: selectedMonth, page: currentPage > 1 ? String(currentPage) : null }}
+                pageParamName="upcoming_page"
+            />
 
             <section className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -220,6 +229,7 @@ export default async function AdminLivesPage({
                         const previousWeek = previousLive ? getWeekKey(previousLive.live_date) : null;
                         const showMonth = month !== previousMonth;
                         const showWeek = week !== previousWeek;
+                        const scheduleLines = getScheduleSummaryLines(live);
 
                         return (
                             <div key={live.id} className="space-y-3">
@@ -240,16 +250,20 @@ export default async function AdminLivesPage({
                                         <div>
                                             <p className="text-sm text-zinc-400 group-hover:text-zinc-700">
                                                 {live.live_date}
-                                                {live.live_start_time &&
-                                                    ` / ${formatTime(live.live_start_time)}`}
+                                                {live.start_time &&
+                                                    ` / ${live.start_time.slice(0, 5)}${live.end_time ? `-${live.end_time.slice(0, 5)}` : ""}`}
                                             </p>
                                             <h3 className="mt-2 text-xl font-black text-white group-hover:text-black">{live.event_name}</h3>
                                             <p className="mt-2 text-sm text-zinc-400 group-hover:text-zinc-700">
-                                                ライブ会場: {getVenueText(live)}
+                                                会場: {getVenueText(live)}
                                             </p>
-                                            <p className="mt-1 text-sm text-zinc-400 group-hover:text-zinc-700">
-                                                特典会会場: {getBenefitVenueText(live)}
-                                            </p>
+                                            <div className="mt-2 space-y-1 text-sm text-zinc-400 group-hover:text-zinc-700">
+                                                {scheduleLines.slice(0, 3).map((line) => (
+                                                    <p key={line.id}>
+                                                        {line.label}: {line.timeText}
+                                                    </p>
+                                                ))}
+                                            </div>
                                         </div>
 
                                         <div className="flex gap-2">
@@ -273,7 +287,7 @@ export default async function AdminLivesPage({
                     basePath="/admin/lives"
                     currentPage={currentPage}
                     totalPages={totalPages}
-                    query={{ month: selectedMonth }}
+                    query={{ month: selectedMonth, upcoming_page: payload.upcoming_pagination.page > 1 ? String(payload.upcoming_pagination.page) : null }}
                 />
             </section>
         </main>

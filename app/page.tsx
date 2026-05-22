@@ -1,6 +1,7 @@
 ﻿import type { Metadata } from "next";
 import Link from "next/link";
 import { formatDateJa, formatTime } from "@/lib/date-time";
+import { getPrimaryVenue, getScheduleSummaryLines } from "@/lib/live-utils";
 import { getPublicHome } from "@/lib/public-api";
 import { getSiteUrl } from "@/lib/seo";
 
@@ -61,29 +62,15 @@ export default async function Home() {
     },
   ];
 
-  const nextLiveVenue = nextLive?.venue ?? null;
-  const nextBenefitVenue = nextLive?.benefit_venue ?? null;
-  const nextBenefitPlaceText = nextLive
-    ? nextBenefitVenue?.name
-      ? `${nextBenefitVenue.name}${nextBenefitVenue.area ? ` / ${nextBenefitVenue.area}` : ""}${nextLive.benefit_meeting_place_detail ? ` / ${nextLive.benefit_meeting_place_detail}` : ""}`
-      : (nextLive.benefit_meeting_place_detail ?? "会場未定")
-    : null;
+  const nextLiveVenue = nextLive ? getPrimaryVenue(nextLive) : null;
+  const nextLiveScheduleLines = nextLive ? getScheduleSummaryLines(nextLive) : [];
   const livePreviewLives = latestLives;
   const nextLiveTimeText = nextLive
-    ? nextLive.live_start_time
-      ? nextLive.live_end_time
-        ? `${formatTime(nextLive.live_start_time)}-${formatTime(nextLive.live_end_time)}`
-        : `${formatTime(nextLive.live_start_time)} 開演`
+    ? nextLive.start_time
+      ? nextLive.end_time
+        ? `${formatTime(nextLive.start_time)}-${formatTime(nextLive.end_time)}`
+        : formatTime(nextLive.start_time)
       : "時間未定"
-    : null;
-  const nextBenefitTimeText = nextLive
-    ? nextLive.benefit_meeting_time_note
-      ? nextLive.benefit_meeting_time_note
-      : nextLive.benefit_meeting_start_time
-        ? nextLive.benefit_meeting_end_time
-          ? `${formatTime(nextLive.benefit_meeting_start_time)}-${formatTime(nextLive.benefit_meeting_end_time)}`
-          : `${formatTime(nextLive.benefit_meeting_start_time)} 開始`
-        : "未定"
     : null;
 
   const shareUrl = createShareUrl();
@@ -141,10 +128,14 @@ export default async function Home() {
                     {nextLive.live_date}
                     {nextLiveTimeText && ` / ${nextLiveTimeText}`}
                   </p>
-                  <p className="text-sm text-zinc-400">
-                    特典会: {nextBenefitTimeText}
-                    {nextBenefitPlaceText && ` / ${nextBenefitPlaceText}`}
-                  </p>
+                  <div className="space-y-1 text-sm text-zinc-400">
+                    {nextLiveScheduleLines.map((line) => (
+                      <p key={line.id}>
+                        {line.label}: {line.timeText}
+                        {line.placeText && ` / ${line.placeText}`}
+                      </p>
+                    ))}
+                  </div>
                 </div>
 
                 <Link
@@ -301,9 +292,9 @@ export default async function Home() {
 
           <div className="space-y-3">
             {livePreviewLives?.map((live) => {
-              const venue = live.venue;
-              const startTime = formatTime(live.live_start_time ?? null);
-              const endTime = formatTime(live.live_end_time ?? null);
+              const venue = getPrimaryVenue(live);
+              const startTime = formatTime(live.start_time ?? null);
+              const endTime = formatTime(live.end_time ?? null);
 
               return (
                 <Link
@@ -321,6 +312,13 @@ export default async function Home() {
                     {venue?.name ?? "会場未登録"}
                     {venue?.area && ` / ${venue.area}`}
                   </p>
+                  <div className="mt-2 space-y-1 text-sm text-zinc-400 group-hover:text-zinc-700">
+                    {getScheduleSummaryLines(live).slice(0, 2).map((line) => (
+                      <p key={line.id}>
+                        {line.label}: {line.timeText}
+                      </p>
+                    ))}
+                  </div>
                 </Link>
               );
             })}
