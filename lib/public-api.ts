@@ -114,22 +114,44 @@ export type PublicLive = {
     id: string;
     live_date: string;
     same_day_order: number | null;
-    live_start_time: string | null;
-    live_end_time: string | null;
-    benefit_meeting_start_time: string | null;
-    benefit_meeting_end_time: string | null;
-    benefit_meeting_time_note: string | null;
-    benefit_meeting_place_detail: string | null;
+    start_time: string | null;
+    end_time: string | null;
     ticket_url: string | null;
     official_x_url: string | null;
     event_name: string;
     memo: string | null;
-    venue: PublicVenue | null;
-    benefit_venue: PublicVenue | null;
+    schedule_items: {
+        id: string;
+        live_id: string;
+        order_no: number;
+        schedule_kind: string;
+        item_title: string | null;
+        start_time: string | null;
+        end_time: string | null;
+        time_note: string | null;
+        place_detail: string | null;
+        venue: PublicVenue | null;
+        setlist_items: {
+            id: string;
+            order_no: number;
+            note: string | null;
+            song: {
+                id: string;
+                title: string;
+                slug: string;
+            } | null;
+        }[];
+    }[];
 };
 
 export type PublicLiveListResponse = {
     upcoming_items: PublicLive[];
+    upcoming_pagination: {
+        page: number;
+        page_size: number;
+        total_items: number;
+        total_pages: number;
+    };
     history_items: PublicLive[];
     month_index: {
         key: string;
@@ -147,15 +169,6 @@ export type PublicLiveListResponse = {
 export type PublicLiveDetailResponse = {
     found: boolean;
     live: PublicLive | null;
-    setlist_items: {
-        id: string;
-        order_no: number;
-        note: string | null;
-        song: {
-            title: string;
-            slug: string;
-        } | null;
-    }[];
 };
 
 export type PublicWikiPageSummary = {
@@ -239,7 +252,7 @@ export function getPublicSongDetail(slug: string) {
     return fetchJson<PublicSongDetailResponse>(`/api/v1/public/songs/${slug}`);
 }
 
-export function getPublicLives(params: { month?: string | null; page?: number }) {
+export function getPublicLives(params: { month?: string | null; page?: number; upcoming_page?: number }) {
     return fetchJson<PublicLiveListResponse>("/api/v1/public/lives", params);
 }
 

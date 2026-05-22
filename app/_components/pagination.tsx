@@ -16,10 +16,12 @@ function createHref({
     basePath,
     query,
     page,
+    pageParamName,
 }: {
     basePath: string;
     query?: Record<string, string | null | undefined>;
     page?: number;
+    pageParamName?: string;
 }) {
     const params = new URLSearchParams();
 
@@ -30,7 +32,7 @@ function createHref({
     }
 
     if (page && page > 1) {
-        params.set("page", String(page));
+        params.set(pageParamName ?? "page", String(page));
     }
 
     const search = params.toString();
@@ -43,11 +45,13 @@ export default function Pagination({
     currentPage,
     totalPages,
     query,
+    pageParamName,
 }: {
     basePath: string;
     currentPage: number;
     totalPages: number;
     query?: Record<string, string | null | undefined>;
+    pageParamName?: string;
 }) {
     if (totalPages <= 1) {
         return null;
@@ -65,6 +69,7 @@ export default function Pagination({
                     basePath,
                     query,
                     page: Math.max(currentPage - 1, 1),
+                    pageParamName,
                 })}
                 aria-disabled={currentPage === 1}
                 className="rounded-sm bg-zinc-900 px-4 py-2 text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black aria-disabled:pointer-events-none aria-disabled:opacity-40"
@@ -90,6 +95,7 @@ export default function Pagination({
                                 basePath,
                                 query,
                                 page,
+                                pageParamName,
                             })}
                             aria-current={
                                 page === currentPage ? "page" : undefined
@@ -107,6 +113,7 @@ export default function Pagination({
                     basePath,
                     query,
                     page: Math.min(currentPage + 1, totalPages),
+                    pageParamName,
                 })}
                 aria-disabled={currentPage === totalPages}
                 className="rounded-sm bg-zinc-900 px-4 py-2 text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black aria-disabled:pointer-events-none aria-disabled:opacity-40"

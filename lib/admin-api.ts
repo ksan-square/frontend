@@ -115,28 +115,39 @@ export async function getAdminLiveDetailByApi(liveId: string) {
             id: string;
             live_date: string;
             same_day_order: number | null;
-            live_start_time: string | null;
-            live_end_time: string | null;
-            benefit_meeting_start_time: string | null;
-            benefit_meeting_end_time: string | null;
-            benefit_meeting_time_note: string | null;
-            benefit_meeting_place_detail: string | null;
+            start_time: string | null;
+            end_time: string | null;
             ticket_url: string | null;
             official_x_url: string | null;
             event_name: string;
             memo: string | null;
-            venue: {
+            schedule_items: {
                 id: string;
-                name: string;
-                area: string | null;
-                google_map_url: string | null;
-            } | null;
-            benefit_venue: {
-                id: string;
-                name: string;
-                area: string | null;
-                google_map_url: string | null;
-            } | null;
+                live_id: string;
+                order_no: number;
+                schedule_kind: string;
+                item_title: string | null;
+                start_time: string | null;
+                end_time: string | null;
+                time_note: string | null;
+                place_detail: string | null;
+                venue: {
+                    id: string;
+                    name: string;
+                    area: string | null;
+                    google_map_url: string | null;
+                } | null;
+                setlist_items: {
+                    id: string;
+                    order_no: number;
+                    note: string | null;
+                    song: {
+                        id: string;
+                        title: string;
+                        slug: string;
+                    } | null;
+                }[];
+            }[];
         } | null;
         venues: {
             id: string;
@@ -155,15 +166,6 @@ export async function getAdminLiveDetailByApi(liveId: string) {
             composer: string | null;
             arranger: string | null;
         }[];
-        setlist_items: {
-            id: string;
-            order_no: number;
-            note: string | null;
-            song: {
-                title: string;
-                slug: string;
-            } | null;
-        }[];
     }>(`/api/v1/admin/lives/${liveId}`);
 }
 
@@ -181,7 +183,7 @@ export async function deleteLiveByApi(liveId: string) {
 }
 
 export async function addSetlistItem(liveId: string, payload: { song_id: string; note: string | null }) {
-    return adminFetch<{ id: string }>(`/api/v1/admin/lives/${liveId}/setlist-items`, {
+    return adminFetch<{ id: string }>(`/api/v1/admin/schedule-items/${liveId}/setlist-items`, {
         method: "POST",
         body: JSON.stringify(payload),
     });
@@ -201,9 +203,29 @@ export async function deleteSetlistItem(itemId: string) {
 }
 
 export async function reorderSetlist(liveId: string, items: { id: string; order_no: number }[]) {
-    return adminFetch<{ success: boolean }>(`/api/v1/admin/lives/${liveId}/setlist`, {
+    return adminFetch<{ success: boolean }>(`/api/v1/admin/schedule-items/${liveId}/setlist`, {
         method: "PUT",
         body: JSON.stringify({ items }),
+    });
+}
+
+export async function createLiveScheduleItem(liveId: string, payload: Record<string, unknown>) {
+    return adminFetch<{ id: string }>(`/api/v1/admin/lives/${liveId}/schedule-items`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function updateLiveScheduleItem(itemId: string, payload: Record<string, unknown>) {
+    return adminFetch<{ success: boolean }>(`/api/v1/admin/schedule-items/${itemId}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function deleteLiveScheduleItem(itemId: string) {
+    return adminFetch<{ success: boolean }>(`/api/v1/admin/schedule-items/${itemId}`, {
+        method: "DELETE",
     });
 }
 
@@ -244,6 +266,32 @@ export async function updateVenue(venueId: string, payload: Record<string, unkno
 export async function deleteVenue(venueId: string) {
     return adminFetch<{ success: boolean }>(`/api/v1/admin/venues/${venueId}`, {
         method: "DELETE",
+    });
+}
+
+export async function importVenues(payload: {
+    items: {
+        name: string;
+        area: string | null;
+        address: string | null;
+        google_map_url: string | null;
+    }[];
+    overwrite_existing: boolean;
+}) {
+    return adminFetch<{
+        total_received: number;
+        created_count: number;
+        updated_count: number;
+        skipped_count: number;
+        items: {
+            name: string;
+            status: "created" | "updated" | "skipped";
+            id: string | null;
+            message: string | null;
+        }[];
+    }>("/api/v1/import/venues", {
+        method: "POST",
+        body: JSON.stringify(payload),
     });
 }
 

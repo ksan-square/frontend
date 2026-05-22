@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import { formatTime, getTodayInTokyo } from "@/lib/date-time";
+import { getPrimaryVenue, getScheduleSummaryLines } from "@/lib/live-utils";
 import { DEFAULT_DESCRIPTION, createDescription, joinDescriptionParts } from "@/lib/seo";
 import { getPublicLiveDetail } from "@/lib/public-api";
 
@@ -29,17 +30,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         };
     }
 
-    const liveTimeText = liveData.live_start_time
-        ? liveData.live_end_time
-            ? `${formatTime(liveData.live_start_time)}-${formatTime(liveData.live_end_time)}`
-            : `${formatTime(liveData.live_start_time)} 開演`
+    const primaryVenue = getPrimaryVenue(liveData);
+    const liveTimeText = liveData.start_time
+        ? liveData.end_time
+            ? `${formatTime(liveData.start_time)}-${formatTime(liveData.end_time)}`
+            : formatTime(liveData.start_time)
         : null;
     const description = joinDescriptionParts([
         liveData.live_date,
         liveTimeText,
-        liveData.venue?.name,
-        liveData.venue?.area,
-        liveData.benefit_meeting_time_note,
+        primaryVenue?.name,
+        primaryVenue?.area,
+        getScheduleSummaryLines(liveData).map((line) => `${line.label}: ${line.timeText}`).join(" / "),
         createDescription(liveData.memo, 80),
     ]);
 
@@ -104,30 +106,14 @@ export default async function LiveDetailPage({ params }: Props) {
     }
 
     const live = payload.live;
-    const venue = live.venue;
-    const benefitVenue = live.benefit_venue ?? venue;
+    const venue = getPrimaryVenue(live);
+    const scheduleLines = getScheduleSummaryLines(live);
     const isUpcoming = live.live_date >= today;
-    const liveStartTime = formatTime(live.live_start_time);
-    const liveEndTime = formatTime(live.live_end_time);
-    const benefitStartTime = formatTime(live.benefit_meeting_start_time);
-    const benefitEndTime = formatTime(live.benefit_meeting_end_time);
-    const benefitPlaceText = benefitVenue?.name
-        ? `${benefitVenue.name}${benefitVenue.area ? ` / ${benefitVenue.area}` : ""}${live.benefit_meeting_place_detail ? ` / ${live.benefit_meeting_place_detail}` : ""}`
-        : live.benefit_meeting_place_detail ?? "会場未定";
-    const liveTimeText = liveStartTime
-        ? liveEndTime
-            ? `${liveStartTime}-${liveEndTime}`
-            : `${liveStartTime} 開演`
+    const liveTimeText = live.start_time
+        ? live.end_time
+            ? `${formatTime(live.start_time)}-${formatTime(live.end_time)}`
+            : formatTime(live.start_time)
         : "時間未定";
-    const benefitTimeText = live.benefit_meeting_time_note
-        ? live.benefit_meeting_time_note
-        : benefitStartTime
-        ? benefitEndTime
-            ? `${benefitStartTime}-${benefitEndTime}`
-            : `${benefitStartTime} 開始予定`
-        : "未定";
-
-    const items = payload.setlist_items;
 
     return (
         <main className="space-y-10">
@@ -151,7 +137,7 @@ export default async function LiveDetailPage({ params }: Props) {
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                     <div className="surface-subtle p-4">
                         <p className="text-xs font-black uppercase tracking-wide text-fuchsia-300">
-                            ライブ予定
+                            イベント
                         </p>
                         <p className="mt-2 text-lg font-black text-white">
                             {live.live_date}
@@ -167,14 +153,17 @@ export default async function LiveDetailPage({ params }: Props) {
 
                     <div className="surface-subtle p-4">
                         <p className="text-xs font-black uppercase tracking-wide text-fuchsia-300">
-                            特典会
+                            時間枠
                         </p>
-                        <p className="mt-2 text-lg font-black text-white">
-                            {benefitTimeText}
-                        </p>
-                        <p className="mt-1 text-sm text-zinc-300">
-                            {benefitPlaceText}
-                        </p>
+                        <div className="mt-2 space-y-2 text-sm text-zinc-300">
+                            {scheduleLines.map((line) => (
+                                <p key={line.id}>
+                                    <span className="font-black text-white">{line.label}</span>
+                                    {`: ${line.timeText}`}
+                                    {line.placeText && ` / ${line.placeText}`}
+                                </p>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -231,53 +220,75 @@ export default async function LiveDetailPage({ params }: Props) {
                     </p>
                 </div>
 
-                {items.length === 0 && (
+                {live.schedule_items.filter((item) => item.schedule_kind === "live").length === 0 && (
                     <div className="surface p-6 text-zinc-400 ring-1 ring-white/10">
-                        {isUpcoming
-                            ? "セトリはライブ後に追加予定です。"
-                            : "まだセトリが登録されていません。"}
+                        ライブ枠がまだ登録されていません。
                     </div>
                 )}
 
-                <ol className="space-y-3">
-                    {items.map((item) => {
-                        const visibleSong = item.song;
+                {live.schedule_items
+                    .filter((item) => item.schedule_kind === "live")
+                    .map((item) => (
+                        <section key={item.id} className="space-y-3">
+                            <div>
+                                <h3 className="text-xl font-black text-white">
+                                    {item.item_title || "ライブ"}
+                                </h3>
+                                <p className="mt-1 text-sm text-zinc-400">
+                                    {item.start_time ? formatTime(item.start_time) : "未定"}
+                                    {item.end_time && `-${formatTime(item.end_time)}`}
+                                </p>
+                            </div>
 
-                        return (
-                            <li
-                                key={item.id}
-                                className="group bg-[#111113] p-5 shadow-xl shadow-black/20 ring-1 ring-white/10 hover:-translate-y-0.5 hover:bg-white"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-violet-500 font-black text-white group-hover:bg-black">
-                                        {item.order_no}
-                                    </span>
-
-                                    <div>
-                                        {visibleSong ? (
-                                            <Link
-                                                href={`/songs/${visibleSong.slug}`}
-                                                className="text-lg font-black text-white group-hover:text-black"
-                                            >
-                                                {visibleSong.title}
-                                            </Link>
-                                        ) : (
-                                            <p className="text-lg font-black text-white group-hover:text-black">
-                                                不明な曲
-                                            </p>
-                                        )}
-
-                                        {item.note && (
-                                            <p className="mt-1 text-sm text-zinc-400 group-hover:text-zinc-700">
-                                                {item.note}
-                                            </p>
-                                        )}
-                                    </div>
+                            {item.setlist_items.length === 0 && (
+                                <div className="surface p-6 text-zinc-400 ring-1 ring-white/10">
+                                    {isUpcoming
+                                        ? "セトリはライブ後に追加予定です。"
+                                        : "まだセトリが登録されていません。"}
                                 </div>
-                            </li>
-                        );
-                    })}
-                </ol>
+                            )}
+
+                            <ol className="space-y-3">
+                                {item.setlist_items.map((setlistItem) => {
+                                    const visibleSong = setlistItem.song;
+
+                                    return (
+                                        <li
+                                            key={setlistItem.id}
+                                            className="group bg-[#111113] p-5 shadow-xl shadow-black/20 ring-1 ring-white/10 hover:-translate-y-0.5 hover:bg-white"
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-violet-500 font-black text-white group-hover:bg-black">
+                                                    {setlistItem.order_no}
+                                                </span>
+
+                                                <div>
+                                                    {visibleSong ? (
+                                                        <Link
+                                                            href={`/songs/${visibleSong.slug}`}
+                                                            className="text-lg font-black text-white group-hover:text-black"
+                                                        >
+                                                            {visibleSong.title}
+                                                        </Link>
+                                                    ) : (
+                                                        <p className="text-lg font-black text-white group-hover:text-black">
+                                                            不明な曲
+                                                        </p>
+                                                    )}
+
+                                                    {setlistItem.note && (
+                                                        <p className="mt-1 text-sm text-zinc-400 group-hover:text-zinc-700">
+                                                            {setlistItem.note}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </li>
+                                    );
+                                })}
+                            </ol>
+                        </section>
+                    ))}
             </section>
         </main>
     );

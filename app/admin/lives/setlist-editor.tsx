@@ -24,13 +24,17 @@ type SetlistItem = {
 };
 
 export default function SetlistEditor({
-    liveId,
+    parentLiveId,
+    scheduleItemId,
     songs,
     initialItems,
+    label,
 }: {
-    liveId: string;
+    parentLiveId: string;
+    scheduleItemId: string;
     songs: Song[];
     initialItems: SetlistItem[];
+    label?: string;
 }) {
     const [items, setItems] = useState<SetlistItem[]>(initialItems);
     const [songId, setSongId] = useState("");
@@ -39,8 +43,9 @@ export default function SetlistEditor({
 
     const fetchSetlist = useCallback(async () => {
         try {
-            const payload = await getAdminLiveDetailByApi(liveId);
-            const nextItems = payload.setlist_items.map((item) => ({
+            const payload = await getAdminLiveDetailByApi(parentLiveId);
+            const targetItem = payload.live?.schedule_items.find((item) => item.id === scheduleItemId);
+            const nextItems = (targetItem?.setlist_items ?? []).map((item) => ({
                 id: item.id,
                 order_no: item.order_no,
                 note: item.note,
@@ -56,7 +61,7 @@ export default function SetlistEditor({
         } catch (error) {
             setMessage(error instanceof Error ? error.message : "取得失敗");
         }
-    }, [liveId]);
+    }, [parentLiveId, scheduleItemId]);
 
     async function handleAdd() {
         if (!songId) {
@@ -64,7 +69,7 @@ export default function SetlistEditor({
         }
 
         try {
-            await addSetlistItem(liveId, {
+            await addSetlistItem(scheduleItemId, {
                 song_id: songId,
                 note: note || null,
             });
@@ -94,7 +99,7 @@ export default function SetlistEditor({
         <section className="space-y-6 rounded-3xl border border-zinc-800 bg-zinc-900 p-6">
             <div>
                 <h2 className="text-2xl font-bold">
-                    セトリ編集
+                    {label ? `${label} のセトリ編集` : "セトリ編集"}
                 </h2>
 
                 <p className="mt-2 text-sm text-zinc-400">
@@ -148,7 +153,7 @@ export default function SetlistEditor({
                 items={items}
                 onDelete={handleDelete}
                 onError={setMessage}
-                liveId={liveId}
+                liveId={scheduleItemId}
             />
         </section>
     );

@@ -87,32 +87,49 @@ export type AdminLiveSummary = {
     id: string;
     live_date: string;
     same_day_order: number | null;
-    live_start_time: string | null;
-    live_end_time: string | null;
-    benefit_meeting_start_time: string | null;
-    benefit_meeting_end_time: string | null;
-    benefit_meeting_time_note: string | null;
-    benefit_meeting_place_detail: string | null;
+    start_time: string | null;
+    end_time: string | null;
     ticket_url: string | null;
     official_x_url: string | null;
     event_name: string;
     memo: string | null;
-    venue: {
+    schedule_items: {
         id: string;
-        name: string;
-        area: string | null;
-        google_map_url: string | null;
-    } | null;
-    benefit_venue: {
-        id: string;
-        name: string;
-        area: string | null;
-        google_map_url: string | null;
-    } | null;
+        live_id: string;
+        order_no: number;
+        schedule_kind: string;
+        item_title: string | null;
+        start_time: string | null;
+        end_time: string | null;
+        time_note: string | null;
+        place_detail: string | null;
+        venue: {
+            id: string;
+            name: string;
+            area: string | null;
+            google_map_url: string | null;
+        } | null;
+        setlist_items: {
+            id: string;
+            order_no: number;
+            note: string | null;
+            song: {
+                id: string;
+                title: string;
+                slug: string;
+            } | null;
+        }[];
+    }[];
 };
 
 export type AdminLiveListResponse = {
     upcoming_items: AdminLiveSummary[];
+    upcoming_pagination: {
+        page: number;
+        page_size: number;
+        total_items: number;
+        total_pages: number;
+    };
     history_items: AdminLiveSummary[];
     month_index: {
         key: string;
@@ -137,15 +154,6 @@ export type AdminLiveDetailResponse = {
         google_map_url: string | null;
     }[];
     songs: AdminSongListResponse["items"];
-    setlist_items: {
-        id: string;
-        order_no: number;
-        note: string | null;
-        song: {
-            title: string;
-            slug: string;
-        } | null;
-    }[];
 };
 
 export type AdminMember = {
@@ -211,7 +219,7 @@ export function getAdminSongDetail(songId: string) {
     return adminServerFetch<AdminSongDetailResponse>(`/api/v1/admin/songs/${songId}`);
 }
 
-export function getAdminLives(params: { month?: string | null; page?: number }) {
+export function getAdminLives(params: { month?: string | null; page?: number; upcoming_page?: number }) {
     return adminServerFetch<AdminLiveListResponse>("/api/v1/admin/lives", params);
 }
 
