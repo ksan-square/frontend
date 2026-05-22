@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
+import { formatTime, getTodayInTokyo } from "@/lib/date-time";
 import { DEFAULT_DESCRIPTION, createDescription, joinDescriptionParts } from "@/lib/seo";
 import { getPublicLiveDetail } from "@/lib/public-api";
 
 export const dynamic = "force-dynamic";
-
-function formatTime(time: string | null) {
-    return time ? time.slice(0, 5) : null;
-}
 
 type Props = {
     params: Promise<{ id: string }>;
@@ -66,12 +63,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function LiveDetailPage({ params }: Props) {
     const { id } = await params;
-    const today = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Asia/Tokyo",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-    }).format(new Date());
+    const today = getTodayInTokyo();
     let payload;
     try {
         payload = await getPublicLiveDetail(id);

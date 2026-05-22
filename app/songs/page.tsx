@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import Pagination from "@/app/_components/pagination";
+import { createPathWithQuery, getPaginationRange, parsePageParam, parseTrimmedParam } from "@/lib/page-utils";
 import { getPublicSongs } from "@/lib/public-api";
 
 export const metadata: Metadata = {
@@ -24,34 +25,8 @@ type SearchParams = Promise<{
     page?: string | string[];
 }>;
 
-function firstParam(value: string | string[] | undefined) {
-    return Array.isArray(value) ? value[0] : value;
-}
-
-function parsePage(value: string | string[] | undefined) {
-    const page = Number(firstParam(value));
-
-    if (!Number.isInteger(page) || page < 1) {
-        return 1;
-    }
-
-    return page;
-}
-
-function parseInitial(value: string | string[] | undefined) {
-    const initial = firstParam(value)?.trim();
-
-    if (!initial) {
-        return null;
-    }
-
-    return initial;
-}
-
 function createSongsHref(initial?: string | null) {
-    return initial
-        ? `/songs?initial=${encodeURIComponent(initial)}`
-        : "/songs";
+    return createPathWithQuery("/songs", { initial });
 }
 
 export default async function SongsPage({
@@ -60,8 +35,8 @@ export default async function SongsPage({
     searchParams: SearchParams;
 }) {
     const params = await searchParams;
-    const requestedInitial = parseInitial(params.initial);
-    const requestedPage = parsePage(params.page);
+    const requestedInitial = parseTrimmedParam(params.initial);
+    const requestedPage = parsePageParam(params.page);
     const response = await getPublicSongs({
         initial: requestedInitial,
         page: requestedPage,
@@ -78,8 +53,11 @@ export default async function SongsPage({
         const totalSongs = response.pagination.total_items;
         const totalPages = response.pagination.total_pages;
         const currentPage = response.pagination.page;
-        const rangeStart = (currentPage - 1) * PAGE_SIZE;
-        const rangeEnd = rangeStart + PAGE_SIZE - 1;
+        const { displayStart, displayEnd } = getPaginationRange({
+            currentPage,
+            pageSize: PAGE_SIZE,
+            totalItems: totalSongs,
+        });
         const selectedInitial =
             requestedInitial &&
             songIndex.some((item) => item.key === requestedInitial)
@@ -131,8 +109,7 @@ export default async function SongsPage({
 
                 <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-400">
                     <p>
-                        {totalSongs}曲中 {totalSongs === 0 ? 0 : rangeStart + 1}-
-                        {Math.min(rangeEnd + 1, totalSongs)}曲を表示
+                        {totalSongs}曲中 {displayStart}-{displayEnd}曲を表示
                     </p>
 
                     {selectedInitial && (

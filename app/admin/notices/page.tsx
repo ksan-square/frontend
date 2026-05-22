@@ -1,12 +1,9 @@
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
+import { formatDateTimeJa } from "@/lib/date-time";
 import { getAdminNotices } from "@/lib/admin-server-api";
 
 export const dynamic = "force-dynamic";
-
-function formatDate(date: string) {
-    return new Date(date).toLocaleString("ja-JP");
-}
 
 export default async function AdminNoticesPage() {
     const payload = await getAdminNotices();
@@ -66,7 +63,7 @@ export default async function AdminNoticesPage() {
                                     {notice.tag ?? "タグなし"}
                                 </p>
                                 <p className="mt-1 text-sm text-zinc-400 group-hover:text-zinc-700">
-                                    公開日時: {formatDate(notice.published_at)}
+                                    公開日時: {formatDateTimeJa(notice.published_at)}
                                 </p>
                             </div>
 

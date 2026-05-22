@@ -1,5 +1,6 @@
 ﻿import type { Metadata } from "next";
 import Link from "next/link";
+import { formatDateJa, formatTime } from "@/lib/date-time";
 import { getPublicHome } from "@/lib/public-api";
 import { getSiteUrl } from "@/lib/seo";
 
@@ -13,10 +14,6 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
-
-function formatTime(time: string | null) {
-  return time ? time.slice(0, 5) : null;
-}
 
 function createShareUrl() {
   const shareText =
@@ -63,10 +60,6 @@ export default async function Home() {
       symbol: "W",
     },
   ];
-
-  function formatDate(date: string) {
-    return new Date(date).toLocaleDateString("ja-JP");
-  }
 
   const nextLiveVenue = nextLive?.venue ?? null;
   const nextBenefitVenue = nextLive?.benefit_venue ?? null;
@@ -226,7 +219,7 @@ export default async function Home() {
               >
                 <p className="text-lg font-black text-white">{page.title}</p>
                 <p className="mt-1 text-sm text-zinc-400">
-                  更新: {formatDate(page.updated_at)}
+                  更新: {formatDateJa(page.updated_at)}
                 </p>
               </Link>
             ))}

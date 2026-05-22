@@ -1,9 +1,23 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import type { AdminLiveSummary } from "@/lib/admin-server-api";
 import { updateLive } from "./actions";
 
-export default function LiveForm({ venues, initialData }: any) {
+type EditableLive = AdminLiveSummary & {
+    venue_id?: string | null;
+    benefit_venue_id?: string | null;
+};
+
+type LiveFormProps = {
+    venues: {
+        id: string;
+        name: string;
+    }[];
+    initialData: EditableLive;
+};
+
+export default function LiveForm({ venues, initialData }: LiveFormProps) {
     const router = useRouter();
 
     async function handleSubmit(formData: FormData) {
@@ -74,7 +88,7 @@ export default function LiveForm({ venues, initialData }: any) {
             >
                 <option value="">会場を選択</option>
 
-                {venues.map((venue: any) => (
+                {venues.map((venue) => (
                     <option key={venue.id} value={venue.id}>
                         {venue.name}
                     </option>
@@ -109,7 +123,7 @@ export default function LiveForm({ venues, initialData }: any) {
             >
                 <option value="">特典会会場はライブ会場と同じ</option>
 
-                {venues.map((venue: any) => (
+                {venues.map((venue) => (
                     <option key={venue.id} value={venue.id}>
                         {venue.name}
                     </option>

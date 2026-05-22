@@ -2,6 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import Pagination from "@/app/_components/pagination";
+import {
+  formatMonthLabel,
+  formatTime,
+  formatWeekLabel,
+  getMonthKey,
+  getWeekKey,
+} from "@/lib/date-time";
+import { createPathWithQuery, getPaginationRange, parseMonthParam, parsePageParam } from "@/lib/page-utils";
 import { getPublicLives } from "@/lib/public-api";
 
 export const metadata: Metadata = {
@@ -19,67 +27,13 @@ export const fetchCache = "force-no-store";
 
 const PAGE_SIZE = 20;
 
-function formatTime(time: string | null) {
-  return time ? time.slice(0, 5) : null;
-}
-
 type SearchParams = Promise<{
   month?: string | string[];
   page?: string | string[];
 }>;
 
-function firstParam(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function parsePage(value: string | string[] | undefined) {
-  const page = Number(firstParam(value));
-
-  if (!Number.isInteger(page) || page < 1) {
-    return 1;
-  }
-
-  return page;
-}
-
-function parseMonth(value: string | string[] | undefined) {
-  const month = firstParam(value);
-
-  if (!month || !/^\d{4}-\d{2}$/.test(month)) {
-    return null;
-  }
-
-  return month;
-}
-
-function formatMonthLabel(month: string) {
-  const [year, monthNumber] = month.split("-");
-
-  return `${year}年${Number(monthNumber)}月`;
-}
-
-function getMonthKey(date: string) {
-  return date.slice(0, 7);
-}
-
-function getWeekKey(date: string) {
-  const day = new Date(`${date}T00:00:00`);
-  const year = day.getFullYear();
-  const month = day.getMonth();
-  const weekOfMonth = Math.floor((day.getDate() - 1) / 7) + 1;
-
-  return `${year}-${String(month + 1).padStart(2, "0")}-w${weekOfMonth}`;
-}
-
-function formatWeekLabel(date: string) {
-  const day = new Date(`${date}T00:00:00`);
-  const weekOfMonth = Math.floor((day.getDate() - 1) / 7) + 1;
-
-  return `${day.getMonth() + 1}月 第${weekOfMonth}週`;
-}
-
 function createLivesHref(month?: string | null) {
-  return month ? `/lives?month=${month}` : "/lives";
+  return createPathWithQuery("/lives", { month });
 }
 
 export default async function LivesPage({
@@ -88,8 +42,8 @@ export default async function LivesPage({
   searchParams: SearchParams;
 }) {
   const params = await searchParams;
-  const selectedMonth = parseMonth(params.month);
-  const requestedPage = parsePage(params.page);
+  const selectedMonth = parseMonthParam(params.month);
+  const requestedPage = parsePageParam(params.page);
   let payload;
   try {
     payload = await getPublicLives({
@@ -109,8 +63,11 @@ export default async function LivesPage({
   const totalLives = payload.pagination.total_items;
   const totalPages = payload.pagination.total_pages;
   const currentPage = payload.pagination.page;
-  const rangeStart = (currentPage - 1) * PAGE_SIZE;
-  const rangeEnd = rangeStart + PAGE_SIZE - 1;
+  const { displayStart, displayEnd } = getPaginationRange({
+    currentPage,
+    pageSize: PAGE_SIZE,
+    totalItems: totalLives,
+  });
   const lives = payload.history_items;
   const upcomingLives = payload.upcoming_items;
   const historyLives = lives.map((live, index) => {
@@ -274,8 +231,7 @@ export default async function LivesPage({
 
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-400">
         <p>
-          {totalLives}件中 {totalLives === 0 ? 0 : rangeStart + 1}-
-          {Math.min(rangeEnd + 1, totalLives)}件を表示
+          {totalLives}件中 {displayStart}-{displayEnd}件を表示
         </p>
 
         {selectedMonth && (
