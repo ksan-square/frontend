@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
+import JsonLd from "@/app/_components/json-ld";
 import SongContentBlocks from "@/app/_components/song-content-blocks";
 import SongRichMarkdown from "@/app/_components/song-rich-markdown";
 import {
     DEFAULT_DESCRIPTION,
+    getSiteUrl,
     createDescription,
     joinDescriptionParts,
 } from "@/lib/seo";
@@ -38,27 +40,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const blockDescription = payload?.content_blocks
         ?.map((block) => block.section_label || block.body_markdown)
         .join(" ");
-    const bodyDescription = createDescription(blockDescription || payload?.markdown_page?.body_markdown, 90);
+    const bodyDescription = createDescription(blockDescription || payload?.markdown_page?.body_markdown, 60);
     const description = joinDescriptionParts([
-        song.description,
-        bodyDescription,
-        song.lyricist ? `作詞 ${song.lyricist}` : null,
-        song.composer ? `作曲 ${song.composer}` : null,
+        `「${song.title}」のコール・歌割・楽曲構成を掲載。`,
+        bodyDescription
+            ? `宵越しのアンサンブル楽曲のライブ向けコール案やパート分けを確認できます。${bodyDescription}`
+            : "宵越しのアンサンブル楽曲のライブ向けコール案やパート分けを確認できます。",
     ]);
 
     return {
-        title: song.title,
+        title: `${song.title} コール・歌割`,
         description,
         alternates: {
             canonical: `/songs/${slug}`,
         },
         openGraph: {
-            title: song.title,
+            title: `${song.title} コール・歌割`,
             description,
             url: `/songs/${slug}`,
         },
         twitter: {
-            title: song.title,
+            title: `${song.title} コール・歌割`,
             description,
         },
     };
@@ -133,6 +135,7 @@ export default async function SongDetailPage({ params }: Props) {
     }
 
     const song = payload.song;
+    const siteUrl = getSiteUrl();
     const songMarkdownPage = payload.markdown_page;
     const songParts = payload.parts;
     const displayMembers = payload.members;
@@ -154,9 +157,59 @@ export default async function SongDetailPage({ params }: Props) {
               label: item.label,
               anchorId: item.anchor_id,
           }));
+    const description =
+        joinDescriptionParts(
+            [
+                `「${song.title}」のコール・歌割・楽曲構成を掲載。`,
+                "宵越しのアンサンブル楽曲のライブ向けコール案やパート分けを確認できます。",
+                song.description,
+            ],
+            DEFAULT_DESCRIPTION,
+        );
+    const songUrl = `${siteUrl}/songs/${song.slug}`;
+    const breadcrumbJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+            {
+                "@type": "ListItem",
+                position: 1,
+                name: "こしあんスクエア",
+                item: siteUrl,
+            },
+            {
+                "@type": "ListItem",
+                position: 2,
+                name: "曲一覧",
+                item: `${siteUrl}/songs`,
+            },
+            {
+                "@type": "ListItem",
+                position: 3,
+                name: song.title,
+                item: songUrl,
+            },
+        ],
+    };
+    const musicRecordingJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "MusicRecording",
+        name: song.title,
+        url: songUrl,
+        description,
+        inLanguage: "ja",
+        byArtist: {
+            "@type": "MusicGroup",
+            name: "宵越しのアンサンブル",
+        },
+        lyricist: song.lyricist ?? undefined,
+        composer: song.composer ?? undefined,
+    };
 
     return (
         <main className="space-y-10">
+            <JsonLd data={breadcrumbJsonLd} />
+            <JsonLd data={musicRecordingJsonLd} />
             <Breadcrumbs
                 items={[
                     { href: "/songs", label: "曲一覧" },

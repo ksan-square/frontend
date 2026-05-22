@@ -1,14 +1,15 @@
 ﻿import type { Metadata } from "next";
 import Link from "next/link";
+import JsonLd from "@/app/_components/json-ld";
 import { formatDateJa, formatTime } from "@/lib/date-time";
 import { getPrimaryVenue, getScheduleSummaryLines } from "@/lib/live-utils";
 import { getPublicHome } from "@/lib/public-api";
 import { getSiteUrl } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "ホーム",
+  title: "こしあんスクエア | 宵越しのアンサンブル 非公式ファンコミュニティ",
   description:
-    "曲、ライブ、Wiki、お知らせをまとめて確認できるこしあんスクエアのトップページです。",
+    "宵越しのアンサンブルの非公式ファンコミュニティ「こしあんスクエア」。ライブ情報・セトリ・コール・歌割・Wiki・お知らせをまとめて掲載。",
   alternates: {
     canonical: "/",
   },
@@ -29,6 +30,7 @@ function createShareUrl() {
 
 export default async function Home() {
   const payload = await getPublicHome();
+  const siteUrl = getSiteUrl();
   const songCount = payload.counts.songs;
   const liveCount = payload.counts.lives;
   const wikiCount = payload.counts.wiki_pages;
@@ -74,9 +76,65 @@ export default async function Home() {
     : null;
 
   const shareUrl = createShareUrl();
+  const collectionPageJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "こしあんスクエア",
+    url: siteUrl,
+    description:
+      "宵越しのアンサンブルの非公式ファンコミュニティ「こしあんスクエア」。ライブ情報・セトリ・コール・歌割・Wiki・お知らせをまとめて掲載。",
+    inLanguage: "ja",
+    about: {
+      "@type": "MusicGroup",
+      name: "宵越しのアンサンブル",
+    },
+    hasPart: [
+      {
+        "@type": "CollectionPage",
+        name: "曲一覧",
+        url: `${siteUrl}/songs`,
+      },
+      {
+        "@type": "CollectionPage",
+        name: "ライブ一覧",
+        url: `${siteUrl}/lives`,
+      },
+      {
+        "@type": "CollectionPage",
+        name: "Wiki一覧",
+        url: `${siteUrl}/wiki`,
+      },
+    ],
+    mainEntity: {
+      "@type": "ItemList",
+      name: "こしあんスクエア掲載コンテンツ",
+      numberOfItems: songCount + liveCount + wikiCount,
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "曲一覧",
+          url: `${siteUrl}/songs`,
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "ライブ一覧",
+          url: `${siteUrl}/lives`,
+        },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: "Wiki一覧",
+          url: `${siteUrl}/wiki`,
+        },
+      ],
+    },
+  };
 
   return (
     <main className="space-y-14 md:space-y-20">
+      <JsonLd data={collectionPageJsonLd} />
       <section className="relative overflow-hidden bg-black px-5 py-6 shadow-2xl shadow-black/40 ring-1 ring-white/10 md:px-10 md:py-10">
         <div className="editorial-rule absolute inset-x-0 top-0 h-1" />
 
