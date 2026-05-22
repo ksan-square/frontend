@@ -198,7 +198,7 @@ export default async function LivesPage({
         <div>
           <h2 className="text-3xl font-black text-white">過去ライブ履歴</h2>
           <p className="mt-2 text-sm text-zinc-400">
-            月ごとのインデックスで探せます。
+            月ごとのインデックスで探すことができます。
           </p>
         </div>
 
