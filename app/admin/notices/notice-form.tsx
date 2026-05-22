@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentUserId } from "@/lib/current-user";
-import { supabaseClient } from "@/lib/supabase-client";
+import { createNotice, deleteNotice, updateNotice } from "@/lib/admin-api";
 
 type NoticeFormData = {
     id: string;
@@ -48,31 +47,23 @@ export default function NoticeForm({
             return;
         }
 
-        const userId = await getCurrentUserId();
         const payload = {
             title: title.trim(),
             tag: tag.trim() || null,
             body: body.trim(),
             is_published: isPublished,
             published_at: new Date(publishedAt).toISOString(),
-            updated_user: userId,
         };
-
-        const result = isEdit
-            ? await supabaseClient
-                  .from("notices")
-                  .update(payload)
-                  .eq("id", initialData?.id)
-                  .eq("is_delete", false)
-            : await supabaseClient.from("notices").insert({
-                  ...payload,
-                  is_delete: false,
-                  created_user: userId,
-              });
-
-        if (result.error) {
-            alert(`${isEdit ? "更新" : "登録"}失敗: ${result.error.message}`);
-            setMessage(result.error.message);
+        try {
+            if (isEdit && initialData?.id) {
+                await updateNotice(initialData.id, payload);
+            } else {
+                await createNotice(payload);
+            }
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "保存失敗";
+            alert(`${isEdit ? "更新" : "登録"}失敗: ${message}`);
+            setMessage(message);
             return;
         }
 
@@ -93,19 +84,12 @@ export default function NoticeForm({
             return;
         }
 
-        const userId = await getCurrentUserId();
-        const { error } = await supabaseClient
-            .from("notices")
-            .update({
-                is_delete: true,
-                updated_user: userId,
-            })
-            .eq("id", initialData.id)
-            .eq("is_delete", false);
-
-        if (error) {
-            alert(`削除失敗: ${error.message}`);
-            setMessage(error.message);
+        try {
+            await deleteNotice(initialData.id);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "削除失敗";
+            alert(`削除失敗: ${message}`);
+            setMessage(message);
             return;
         }
 

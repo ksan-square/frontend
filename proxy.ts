@@ -4,13 +4,15 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-    // ログインページ自体は除外
-    if (pathname === "/admin/login") {
+    if (pathname === "/login" || pathname.startsWith("/auth/callback")) {
         return NextResponse.next();
     }
 
-    // /admin 配下だけ保護
-    if (!pathname.startsWith("/admin")) {
+    const requiresAuth =
+        pathname.startsWith("/portal") ||
+        pathname.startsWith("/admin");
+
+    if (!requiresAuth) {
         return NextResponse.next();
     }
 
@@ -49,7 +51,7 @@ export async function proxy(request: NextRequest) {
 
     if (!user) {
         const loginUrl = request.nextUrl.clone();
-        loginUrl.pathname = "/admin/login";
+        loginUrl.pathname = "/login";
         loginUrl.searchParams.set("redirectedFrom", pathname);
 
         return NextResponse.redirect(loginUrl);
@@ -59,5 +61,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/admin/:path*"],
+    matcher: ["/portal/:path*", "/admin/:path*"],
 };

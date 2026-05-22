@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentUserId } from "@/lib/current-user";
-import { supabaseClient } from "@/lib/supabase-client";
+import { createMember, deleteMember, updateMember } from "@/lib/admin-api";
 
 type MemberFormData = {
     id: string;
@@ -46,7 +45,6 @@ export default function MemberForm({
             return;
         }
 
-        const userId = await getCurrentUserId();
         const payload = {
             name: name.trim(),
             member_color_name: colorName.trim() || null,
@@ -56,24 +54,17 @@ export default function MemberForm({
             profile_json: {},
             sort_order: sortOrder,
             is_active: isActive,
-            updated_user: userId,
         };
-
-        const result = isEdit
-            ? await supabaseClient
-                  .from("members")
-                  .update(payload)
-                  .eq("id", initialData?.id)
-                  .eq("is_delete", false)
-            : await supabaseClient.from("members").insert({
-                  ...payload,
-                  created_user: userId,
-                  is_delete: false,
-              });
-
-        if (result.error) {
-            alert(`${isEdit ? "更新" : "登録"}失敗: ${result.error.message}`);
-            setMessage(result.error.message);
+        try {
+            if (isEdit && initialData?.id) {
+                await updateMember(initialData.id, payload);
+            } else {
+                await createMember(payload);
+            }
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "保存失敗";
+            alert(`${isEdit ? "更新" : "登録"}失敗: ${message}`);
+            setMessage(message);
             return;
         }
 
@@ -94,19 +85,12 @@ export default function MemberForm({
             return;
         }
 
-        const userId = await getCurrentUserId();
-        const { error } = await supabaseClient
-            .from("members")
-            .update({
-                is_delete: true,
-                updated_user: userId,
-            })
-            .eq("id", initialData.id)
-            .eq("is_delete", false);
-
-        if (error) {
-            alert(`削除失敗: ${error.message}`);
-            setMessage(error.message);
+        try {
+            await deleteMember(initialData.id);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "削除失敗";
+            alert(`削除失敗: ${message}`);
+            setMessage(message);
             return;
         }
 

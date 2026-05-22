@@ -278,7 +278,7 @@ export default function SongRichMarkdown({
     };
 
     return (
-        <div className="max-w-none">
+        <div className="max-w-none [&>*:first-child]:mt-0">
             <ReactMarkdown components={components}>{markdown}</ReactMarkdown>
         </div>
     );

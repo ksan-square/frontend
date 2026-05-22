@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
-import { supabase } from "@/lib/supabase";
 import NoticeForm from "../../notice-form";
+import { getAdminNoticeDetail } from "@/lib/admin-server-api";
 
 export const dynamic = "force-dynamic";
 
@@ -11,17 +11,11 @@ type Props = {
 
 export default async function EditNoticePage({ params }: Props) {
     const { id } = await params;
-
-    const { data: notice, error } = await supabase
-        .from("notices")
-        .select("id,title,tag,body,is_published,published_at")
-        .eq("id", id)
-        .eq("is_delete", false)
-        .single();
-
-    if (error || !notice) {
+    const payload = await getAdminNoticeDetail(id);
+    if (!payload.found || !payload.notice) {
         return <main>お知らせが見つかりませんでした。</main>;
     }
+    const notice = payload.notice;
 
     return (
         <main className="space-y-6">

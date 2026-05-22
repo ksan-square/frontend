@@ -1,8 +1,8 @@
-import { supabase } from "@/lib/supabase";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import LiveForm from "../../live-form";
-import SetlistEditor from "../../setlist-editor";
+import ScheduleItemsEditor from "../../schedule-items-editor";
 import Link from "next/link";
+import { getAdminLiveDetail } from "@/lib/admin-server-api";
 
 export const dynamic = "force-dynamic";
 
@@ -14,28 +14,33 @@ export default async function EditPage({
     params,
 }: Props) {
     const { id } = await params;
+    let payload;
+    let errorMessage: string | null = null;
+    try {
+        payload = await getAdminLiveDetail(id);
+    } catch (error) {
+        payload = null;
+        errorMessage =
+            error instanceof Error ? error.message : "unknown error";
+    }
 
-    const { data: live } = await supabase
-        .from("lives")
-        .select("*")
-        .eq("id", id)
-        .eq("is_delete", false)
-        .single();
+    if (errorMessage) {
+        return <main>取得失敗: {errorMessage}</main>;
+    }
 
-    const { data: venues } = await supabase
-        .from("venues")
-        .select("id,name")
-        .order("name");
-
-    const { data: songs } = await supabase
-        .from("songs")
-        .select("id,title")
-        .eq("is_delete", false)
-        .order("order_no", { ascending: true });
-
-    if (!live) {
+    if (!payload?.found || !payload.live) {
         return <main>Not found</main>;
     }
+    const live = payload.live;
+    const venues = payload.venues.map((venue) => ({
+        id: venue.id,
+        name: venue.name,
+        area: venue.area,
+    }));
+    const songs = payload.songs.map((song) => ({
+        id: song.id,
+        title: song.title,
+    }));
 
     return (
         <main className="space-y-8">
@@ -55,13 +60,15 @@ export default async function EditPage({
             </h1>
 
             <LiveForm
-                venues={venues ?? []}
                 initialData={live}
+                venues={venues}
             />
 
-            <SetlistEditor
+            <ScheduleItemsEditor
                 liveId={id}
-                songs={songs ?? []}
+                venues={venues}
+                songs={songs}
+                initialItems={live.schedule_items}
             />
         </main>
     );
