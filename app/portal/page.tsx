@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import LogoutButton from "./logout-button";
+import AccountLinkingPanel from "./account-linking-panel";
 import { getPortalMe } from "@/lib/portal-server-api";
 
 export const dynamic = "force-dynamic";
@@ -89,30 +90,7 @@ export default async function PortalPage() {
                 ))}
             </section>
 
-            <section className="space-y-4 bg-[#111113] p-5 ring-1 ring-white/10">
-                <div>
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-zinc-500">
-                        Linked Identities
-                    </p>
-                    <h2 className="mt-2 text-2xl font-black text-white">
-                        連携済みアカウント
-                    </h2>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                    {me.identities.map((identity) => (
-                        <div
-                            key={`${identity.provider}-${identity.provider_user_id ?? "none"}`}
-                            className="space-y-2 bg-black/60 p-4 ring-1 ring-white/10"
-                        >
-                            <p className="text-sm font-semibold text-white">{identity.provider}</p>
-                            <p className="text-xs text-zinc-400">
-                                {identity.is_primary ? "primary" : "linked"}
-                            </p>
-                        </div>
-                    ))}
-                </div>
-            </section>
+            <AccountLinkingPanel initialIdentities={me.identities} />
         </main>
     );
 }
