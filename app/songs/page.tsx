@@ -45,7 +45,7 @@ function parseInitial(value: string | string[] | undefined) {
         return null;
     }
 
-    return Array.from(initial)[0] ?? null;
+    return initial;
 }
 
 function createSongsHref(initial?: string | null) {

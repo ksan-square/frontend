@@ -35,7 +35,7 @@ function parseInitial(value: string | string[] | undefined) {
         return null;
     }
 
-    return Array.from(initial)[0] ?? null;
+    return initial;
 }
 
 function createSongsHref(initial?: string | null) {
@@ -81,7 +81,7 @@ export default async function AdminSongsPage({
             : null;
 
     return (
-        <main className="space-y-6">
+        <main className="space-y-10">
             <Breadcrumbs
                 items={[
                     { href: "/admin", label: "管理" },
@@ -89,23 +89,37 @@ export default async function AdminSongsPage({
                 ]}
             />
 
-            <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold">曲管理</h1>
+            <section className="relative overflow-hidden bg-black p-6 shadow-2xl shadow-black/30 ring-1 ring-white/10 md:p-8">
+                <div className="editorial-rule absolute inset-x-0 top-0 h-1" />
 
-                <Link
-                    href="/admin/songs/new"
-                    className="rounded-full bg-pink-500 px-4 py-2 font-bold"
-                >
-                    新規追加
-                </Link>
-            </div>
+                <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+                    <div>
+                        <p className="inline-flex bg-white px-3 py-1 text-xs font-black uppercase text-black">
+                            Admin / Songs
+                        </p>
+                        <h1 className="mt-5 text-4xl font-black text-white md:text-5xl">
+                            曲管理
+                        </h1>
+                        <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-300 md:text-base">
+                            曲情報、説明文、歌詞ページの元データを更新します。
+                        </p>
+                    </div>
 
-            <section className="space-y-3 rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+                    <Link
+                        href="/admin/songs/new"
+                        className="w-fit rounded-md bg-violet-500 px-5 py-3 text-sm font-black text-white hover:bg-violet-400"
+                    >
+                        新規追加
+                    </Link>
+                </div>
+            </section>
+
+            <section className="surface-subtle p-4">
                 <div className="flex flex-wrap items-center gap-2">
                     <Link
                         href="/admin/songs"
                         aria-current={!selectedInitial ? "page" : undefined}
-                        className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm aria-current:bg-pink-500 aria-current:font-bold"
+                        className="rounded-sm bg-zinc-900 px-3 py-1.5 text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black aria-current:bg-violet-500 aria-current:font-black aria-current:text-white"
                     >
                         すべて
                     </Link>
@@ -119,10 +133,10 @@ export default async function AdminSongsPage({
                                     ? "page"
                                     : undefined
                             }
-                            className="rounded-full bg-zinc-800 px-3 py-1.5 text-sm aria-current:bg-pink-500 aria-current:font-bold"
+                            className="rounded-sm bg-zinc-900 px-3 py-1.5 text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white hover:text-black aria-current:bg-violet-500 aria-current:font-black aria-current:text-white"
                         >
                             {item.key}
-                            <span className="ml-1 text-xs text-zinc-300">
+                            <span className="ml-1 text-xs text-zinc-400">
                                 {item.count}
                             </span>
                         </Link>
@@ -136,19 +150,19 @@ export default async function AdminSongsPage({
                     {Math.min(rangeEnd + 1, totalSongs)}曲を表示
                 </p>
 
-                {selectedInitial && (
-                    <Link
-                        href="/admin/songs"
-                        className="rounded-full bg-zinc-800 px-3 py-1.5 text-zinc-100"
-                    >
-                        頭文字選択を解除
-                    </Link>
-                )}
-            </div>
+                    {selectedInitial && (
+                        <Link
+                            href="/admin/songs"
+                            className="rounded-sm bg-zinc-900 px-3 py-1.5 text-zinc-100 ring-1 ring-white/10 hover:bg-white hover:text-black"
+                        >
+                            頭文字選択を解除
+                        </Link>
+                    )}
+                </div>
 
-            <section className="space-y-3">
+            <section className="grid gap-4">
                 {songs.length === 0 && (
-                    <p className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 text-zinc-400">
+                    <p className="surface p-6 text-zinc-400 ring-1 ring-white/10">
                         曲が登録されていません。
                     </p>
                 )}
@@ -157,11 +171,11 @@ export default async function AdminSongsPage({
                     <Link
                         key={song.id}
                         href={`/admin/songs/${song.id}/edit`}
-                        className="block rounded-2xl border border-zinc-800 bg-zinc-900 p-5 hover:border-pink-400"
+                        className="group block bg-[#111113] p-5 shadow-xl shadow-black/20 ring-1 ring-white/10 hover:-translate-y-0.5 hover:bg-white"
                     >
-                        <h2 className="text-xl font-bold">{song.title}</h2>
-                        <p className="mt-1 text-sm text-zinc-400">slug: {song.slug}</p>
-                        <p className="mt-2 text-sm text-zinc-400">
+                        <h2 className="text-xl font-black text-white group-hover:text-black">{song.title}</h2>
+                        <p className="mt-1 text-sm text-zinc-400 group-hover:text-zinc-700">slug: {song.slug}</p>
+                        <p className="mt-2 text-sm text-zinc-400 group-hover:text-zinc-700">
                             作詞: {song.lyricist ?? "未登録"} / 作曲: {song.composer ?? "未登録"} / 編曲: {song.arranger ?? "未登録"}
                         </p>
                     </Link>

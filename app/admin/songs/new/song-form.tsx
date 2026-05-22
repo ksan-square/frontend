@@ -8,6 +8,7 @@ export default function SongForm() {
     const router = useRouter();
     const [title, setTitle] = useState("");
     const [slug, setSlug] = useState("");
+    const [songIndex, setSongIndex] = useState("");
     const [orderNo, setOrderNo] = useState(1);
     const [description, setDescription] = useState("");
     const [releaseDate, setReleaseDate] = useState("");
@@ -22,6 +23,7 @@ export default function SongForm() {
             const data = await createSong({
                 title,
                 slug,
+                song_index: songIndex,
                 order_no: orderNo,
                 description: description || null,
                 release_date: releaseDate || null,
@@ -44,6 +46,7 @@ export default function SongForm() {
         <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
             <input className="w-full rounded-xl bg-zinc-950 p-3" placeholder="曲名" value={title} onChange={(e) => setTitle(e.target.value)} />
             <input className="w-full rounded-xl bg-zinc-950 p-3" placeholder="slug 例: natsu-no-ookami" value={slug} onChange={(e) => setSlug(e.target.value)} />
+            <input className="w-full rounded-xl bg-zinc-950 p-3" placeholder="一覧インデックス 例: あ / A / 数字" value={songIndex} onChange={(e) => setSongIndex(e.target.value)} />
             <input className="w-full rounded-xl bg-zinc-950 p-3" type="number" min={1} placeholder="表示順" value={orderNo} onChange={(e) => setOrderNo(Number(e.target.value))} />
             <input className="w-full rounded-xl bg-zinc-950 p-3" type="date" value={releaseDate} onChange={(e) => setReleaseDate(e.target.value)} />
 

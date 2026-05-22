@@ -1,9 +1,12 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { supabaseClient } from "@/lib/supabase-client";
 import SortableSetlist from "./sortable-setlist";
-import { addSetlistItem, deleteSetlistItem } from "@/lib/admin-api";
+import {
+    addSetlistItem,
+    deleteSetlistItem,
+    getAdminLiveDetailByApi,
+} from "@/lib/admin-api";
 
 type Song = {
     id: string;
@@ -35,23 +38,24 @@ export default function SetlistEditor({
     const [message, setMessage] = useState("");
 
     const fetchSetlist = useCallback(async () => {
-        const { data } = await supabaseClient
-            .from("setlist_items")
-            .select(`
-                id,
-                order_no,
-                note,
-                songs (
-                    id,
-                    title,
-                    is_delete
-                )
-            `)
-            .eq("live_id", liveId)
-            .eq("is_delete", false)
-            .order("order_no");
-
-        setItems((data ?? []) as unknown as SetlistItem[]);
+        try {
+            const payload = await getAdminLiveDetailByApi(liveId);
+            const nextItems = payload.setlist_items.map((item) => ({
+                id: item.id,
+                order_no: item.order_no,
+                note: item.note,
+                songs: item.song
+                    ? {
+                          id: "",
+                          title: item.song.title,
+                      }
+                    : null,
+            }));
+            setItems(nextItems);
+            setMessage("");
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : "取得失敗");
+        }
     }, [liveId]);
 
     async function handleAdd() {

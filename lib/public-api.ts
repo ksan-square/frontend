@@ -38,6 +38,7 @@ export type PublicSong = {
     id: string;
     title: string;
     slug: string;
+    song_index: string;
     order_no: number;
     description: string | null;
     release_date: string | null;

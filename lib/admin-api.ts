@@ -57,6 +57,7 @@ async function adminFetch<T>(path: string, init: AdminFetchInit = {}): Promise<T
 export async function createSong(payload: {
     title: string;
     slug: string;
+    song_index: string;
     order_no: number;
     description: string | null;
     release_date: string | null;
@@ -73,6 +74,7 @@ export async function createSong(payload: {
 export async function updateSong(songId: string, payload: {
     title: string;
     slug: string;
+    song_index: string;
     order_no: number;
     description: string | null;
     release_date: string | null;
@@ -104,6 +106,65 @@ export async function createLive(payload: Record<string, unknown>) {
         method: "POST",
         body: JSON.stringify(payload),
     });
+}
+
+export async function getAdminLiveDetailByApi(liveId: string) {
+    return adminFetch<{
+        found: boolean;
+        live: {
+            id: string;
+            live_date: string;
+            same_day_order: number | null;
+            live_start_time: string | null;
+            live_end_time: string | null;
+            benefit_meeting_start_time: string | null;
+            benefit_meeting_end_time: string | null;
+            benefit_meeting_time_note: string | null;
+            benefit_meeting_place_detail: string | null;
+            ticket_url: string | null;
+            official_x_url: string | null;
+            event_name: string;
+            memo: string | null;
+            venue: {
+                id: string;
+                name: string;
+                area: string | null;
+                google_map_url: string | null;
+            } | null;
+            benefit_venue: {
+                id: string;
+                name: string;
+                area: string | null;
+                google_map_url: string | null;
+            } | null;
+        } | null;
+        venues: {
+            id: string;
+            name: string;
+            area: string | null;
+            google_map_url: string | null;
+        }[];
+        songs: {
+            id: string;
+            title: string;
+            slug: string;
+            order_no: number;
+            description: string | null;
+            release_date: string | null;
+            lyricist: string | null;
+            composer: string | null;
+            arranger: string | null;
+        }[];
+        setlist_items: {
+            id: string;
+            order_no: number;
+            note: string | null;
+            song: {
+                title: string;
+                slug: string;
+            } | null;
+        }[];
+    }>(`/api/v1/admin/lives/${liveId}`);
 }
 
 export async function updateLiveByApi(liveId: string, payload: Record<string, unknown>) {

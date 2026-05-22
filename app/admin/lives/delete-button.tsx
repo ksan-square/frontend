@@ -34,7 +34,7 @@ export default function DeleteButton({
     return (
         <button
             onClick={handleDelete}
-            className="rounded-full bg-red-500 px-4 py-2 text-white hover:bg-red-400"
+            className="rounded-sm bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-400"
         >
             削除
         </button>

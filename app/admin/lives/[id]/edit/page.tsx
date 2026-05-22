@@ -25,10 +25,17 @@ export default async function EditPage({
 }: Props) {
     const { id } = await params;
     let payload;
+    let errorMessage: string | null = null;
     try {
         payload = await getAdminLiveDetail(id);
-    } catch {
+    } catch (error) {
         payload = null;
+        errorMessage =
+            error instanceof Error ? error.message : "unknown error";
+    }
+
+    if (errorMessage) {
+        return <main>取得失敗: {errorMessage}</main>;
     }
 
     if (!payload?.found || !payload.live) {

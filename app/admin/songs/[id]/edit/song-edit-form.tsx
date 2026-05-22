@@ -8,6 +8,7 @@ type Song = {
     id: string;
     title: string;
     slug: string;
+    song_index: string;
     order_no: number;
     description: string | null;
     release_date: string | null;
@@ -21,6 +22,7 @@ export default function SongEditForm({ song }: { song: Song }) {
 
     const [title, setTitle] = useState(song.title);
     const [slug, setSlug] = useState(song.slug);
+    const [songIndex, setSongIndex] = useState(song.song_index);
     const [orderNo, setOrderNo] = useState(song.order_no);
     const [description, setDescription] = useState(song.description ?? "");
     const [releaseDate, setReleaseDate] = useState(song.release_date ?? "");
@@ -35,6 +37,7 @@ export default function SongEditForm({ song }: { song: Song }) {
             await updateSong(song.id, {
                 title,
                 slug,
+                song_index: songIndex,
                 order_no: orderNo,
                 description: description || null,
                 release_date: releaseDate || null,
@@ -76,6 +79,7 @@ export default function SongEditForm({ song }: { song: Song }) {
         <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
             <input className="w-full rounded-xl bg-zinc-950 p-3" value={title} onChange={(e) => setTitle(e.target.value)} />
             <input className="w-full rounded-xl bg-zinc-950 p-3" value={slug} onChange={(e) => setSlug(e.target.value)} />
+            <input className="w-full rounded-xl bg-zinc-950 p-3" value={songIndex} onChange={(e) => setSongIndex(e.target.value)} />
             <input className="w-full rounded-xl bg-zinc-950 p-3" type="number" min={1} value={orderNo} onChange={(e) => setOrderNo(Number(e.target.value))} />
             <input className="w-full rounded-xl bg-zinc-950 p-3" type="date" value={releaseDate} onChange={(e) => setReleaseDate(e.target.value)} />
 
