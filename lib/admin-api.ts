@@ -225,6 +225,17 @@ export async function deleteLiveByApi(liveId: string) {
     });
 }
 
+export async function updateLiveStatus(liveId: string, payload: {
+    is_active: boolean;
+    is_current: boolean;
+    manual_override: boolean;
+}) {
+    return adminFetch<{ success: boolean }>(`/api/v1/admin/lives/${liveId}/status`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+    });
+}
+
 export async function addSetlistItem(
     liveId: string,
     payload: {

@@ -33,6 +33,12 @@ export async function updateLive(id: string, formData: FormData) {
         place_detail: formData.get("place_detail")
             ? String(formData.get("place_detail"))
             : null,
+        open_time: formData.get("open_time")
+            ? String(formData.get("open_time"))
+            : null,
+        show_start_time: formData.get("show_start_time")
+            ? String(formData.get("show_start_time"))
+            : null,
     };
     const response = await fetch(`${getApiBaseUrl()}/api/v1/admin/lives/${id}`, {
         method: "PATCH",

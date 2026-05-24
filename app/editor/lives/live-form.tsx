@@ -91,6 +91,30 @@ export default function LiveForm({ initialData, venues }: LiveFormProps) {
                 className="w-full rounded-xl bg-zinc-900 p-3"
             />
 
+            <div className="space-y-1">
+                <p className="text-xs font-black uppercase tracking-wide text-zinc-400">開場 / 開演時間</p>
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                        <label className="text-xs text-zinc-400">開場時間</label>
+                        <input
+                            type="time"
+                            name="open_time"
+                            defaultValue={initialData?.open_time ?? ""}
+                            className="w-full rounded-xl bg-zinc-900 p-3"
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-xs text-zinc-400">開演時間</label>
+                        <input
+                            type="time"
+                            name="show_start_time"
+                            defaultValue={initialData?.show_start_time ?? ""}
+                            className="w-full rounded-xl bg-zinc-900 p-3"
+                        />
+                    </div>
+                </div>
+            </div>
+
             <button className="rounded-md bg-violet-500 px-5 py-2.5 text-sm font-black text-white hover:bg-violet-400">
                 更新
             </button>

@@ -128,6 +128,9 @@ export type PublicLive = {
     same_day_order: number | null;
     start_time: string | null;
     end_time: string | null;
+    open_time: string | null;
+    show_start_time: string | null;
+    is_current: boolean;
     ticket_url: string | null;
     official_x_url: string | null;
     event_name: string;
