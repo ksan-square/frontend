@@ -1,6 +1,7 @@
 import Breadcrumbs from "@/app/_components/breadcrumbs";
 import PageHero from "@/app/_components/page-hero";
 import LiveForm from "../../live-form";
+import LiveStatusEditor from "../../live-status-editor";
 import ScheduleItemsEditor from "../../schedule-items-editor";
 import { getAdminLiveDetail } from "@/lib/admin-server-api";
 
@@ -61,6 +62,13 @@ export default async function EditPage({
             <LiveForm
                 initialData={live}
                 venues={venues}
+            />
+
+            <LiveStatusEditor
+                liveId={id}
+                initialIsActive={live.is_active}
+                initialIsCurrent={live.is_current}
+                initialManualOverride={live.manual_override}
             />
 
             <ScheduleItemsEditor
