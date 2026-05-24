@@ -243,7 +243,7 @@ export default async function WikiDetailPage({ params }: Props) {
                     </p>
                 </div>
 
-                <CommentForm wikiPageId={wikiPage.id} />
+                <CommentForm slug={slug} />
 
                 <div className="space-y-3">
                     {wikiComments.length === 0 && (

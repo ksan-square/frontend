@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabaseClient } from "@/lib/supabase-client";
+import { createWikiComment } from "@/lib/public-api";
 
-export default function CommentForm({ wikiPageId }: { wikiPageId: string }) {
+export default function CommentForm({ slug }: { slug: string }) {
     const router = useRouter();
     const [nickname, setNickname] = useState("");
     const [body, setBody] = useState("");
@@ -21,15 +21,10 @@ export default function CommentForm({ wikiPageId }: { wikiPageId: string }) {
             return;
         }
 
-        const { error } = await supabaseClient.from("wiki_comments").insert({
-            wiki_page_id: wikiPageId,
-            nickname: trimmedNickname,
-            body: trimmedBody,
-            is_delete: false,
-        });
-
-        if (error) {
-            setMessage(`投稿失敗: ${error.message}`);
+        try {
+            await createWikiComment(slug, { nickname: trimmedNickname, body: trimmedBody });
+        } catch (err) {
+            setMessage(`投稿失敗: ${err instanceof Error ? err.message : "unknown error"}`);
             return;
         }
 
