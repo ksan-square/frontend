@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentUserId } from "@/lib/current-user";
-import { supabaseClient } from "@/lib/supabase-client";
+import { deleteWikiComment } from "@/lib/admin-api";
 
 export default function DeleteCommentButton({ id }: { id: string }) {
     const router = useRouter();
@@ -16,24 +15,10 @@ export default function DeleteCommentButton({ id }: { id: string }) {
             return;
         }
 
-        const userId = await getCurrentUserId();
-
-        if (!userId) {
-            setMessage("ログインが必要です。");
-            return;
-        }
-
-        const { error } = await supabaseClient
-            .from("wiki_comments")
-            .update({
-                is_delete: true,
-                updated_user: userId,
-            })
-            .eq("id", id)
-            .eq("is_delete", false);
-
-        if (error) {
-            setMessage(`削除失敗: ${error.message}`);
+        try {
+            await deleteWikiComment(id);
+        } catch (err) {
+            setMessage(`削除失敗: ${err instanceof Error ? err.message : "unknown error"}`);
             return;
         }
 

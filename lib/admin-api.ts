@@ -1,3 +1,5 @@
+// Client Component 用: ブラウザで Supabase セッションから Bearer token を自動取得して FastAPI を呼ぶ。
+// Server Component / Server Action からは admin-server-api.ts を使うこと。
 import { createBrowserClient } from "@supabase/ssr";
 import { getApiBaseUrl } from "@/lib/public-api";
 
@@ -398,6 +400,42 @@ export async function updateNotice(noticeId: string, payload: Record<string, unk
 
 export async function deleteNotice(noticeId: string) {
     return adminFetch<{ success: boolean }>(`/api/v1/admin/notices/${noticeId}`, {
+        method: "DELETE",
+    });
+}
+
+export async function createWikiPage(payload: {
+    title: string;
+    slug: string;
+    body_markdown: string;
+    is_published: boolean;
+}) {
+    return adminFetch<{ id: string }>("/api/v1/admin/wiki-pages", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function updateWikiPage(wikiPageId: string, payload: {
+    title: string;
+    slug: string;
+    body_markdown: string;
+    is_published: boolean;
+}) {
+    return adminFetch<{ success: boolean }>(`/api/v1/admin/wiki-pages/${wikiPageId}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function deleteWikiPage(wikiPageId: string) {
+    return adminFetch<{ success: boolean }>(`/api/v1/admin/wiki-pages/${wikiPageId}`, {
+        method: "DELETE",
+    });
+}
+
+export async function deleteWikiComment(commentId: string) {
+    return adminFetch<{ success: boolean }>(`/api/v1/admin/wiki-comments/${commentId}`, {
         method: "DELETE",
     });
 }
