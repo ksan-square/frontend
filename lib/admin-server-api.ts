@@ -1,3 +1,5 @@
+// Server Component 用: SSR 時に Supabase セッションから Bearer token を取得して FastAPI を呼ぶ。
+// Client Component からは admin-api.ts を使うこと。
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getApiBaseUrl } from "@/lib/public-api";
 
@@ -105,6 +107,11 @@ export type AdminLiveSummary = {
     same_day_order: number | null;
     start_time: string | null;
     end_time: string | null;
+    open_time: string | null;
+    show_start_time: string | null;
+    is_active: boolean;
+    is_current: boolean;
+    manual_override: boolean;
     ticket_url: string | null;
     official_x_url: string | null;
     event_name: string;

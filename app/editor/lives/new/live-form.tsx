@@ -23,6 +23,8 @@ export default function LiveForm({
     const [placeDetail, setPlaceDetail] = useState("");
     const [ticketUrl, setTicketUrl] = useState("");
     const [officialXUrl, setOfficialXUrl] = useState("");
+    const [openTime, setOpenTime] = useState("");
+    const [showStartTime, setShowStartTime] = useState("");
     const [memo, setMemo] = useState("");
     const [message, setMessage] = useState("");
 
@@ -43,6 +45,8 @@ export default function LiveForm({
                 place_detail: placeDetail || null,
                 ticket_url: ticketUrl || null,
                 official_x_url: officialXUrl || null,
+                open_time: openTime || null,
+                show_start_time: showStartTime || null,
                 memo: memo || null,
             });
             showToast({ kind: "success", text: "ライブを登録しました。" });
@@ -80,6 +84,20 @@ export default function LiveForm({
             <input className="w-full rounded-xl bg-zinc-950 p-3" type="url" placeholder="公式X URL" value={officialXUrl} onChange={(e) => setOfficialXUrl(e.target.value)} />
 
             <textarea className="w-full rounded-xl bg-zinc-950 p-3" placeholder="メモ" value={memo} onChange={(e) => setMemo(e.target.value)} />
+
+            <div className="space-y-1">
+                <p className="text-xs font-black uppercase tracking-wide text-zinc-400">開場 / 開演時間</p>
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                        <label className="text-xs text-zinc-400">開場時間</label>
+                        <input type="time" className="w-full rounded-xl bg-zinc-950 p-3" value={openTime} onChange={(e) => setOpenTime(e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-xs text-zinc-400">開演時間</label>
+                        <input type="time" className="w-full rounded-xl bg-zinc-950 p-3" value={showStartTime} onChange={(e) => setShowStartTime(e.target.value)} />
+                    </div>
+                </div>
+            </div>
 
             <button className="rounded-md bg-violet-500 px-5 py-2.5 text-sm font-black text-white hover:bg-violet-400">登録</button>
 

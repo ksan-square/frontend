@@ -205,6 +205,23 @@ export default async function LiveDetailPage({ params }: Props) {
                     {live.event_name}
                 </h1>
 
+                {(live.open_time || live.show_start_time) && (
+                    <div className="mt-4 flex flex-wrap gap-4 text-sm text-zinc-300">
+                        {live.open_time && (
+                            <span>
+                                <span className="font-black text-fuchsia-300">開場</span>{" "}
+                                {formatTime(live.open_time)}
+                            </span>
+                        )}
+                        {live.show_start_time && (
+                            <span>
+                                <span className="font-black text-fuchsia-300">開演</span>{" "}
+                                {formatTime(live.show_start_time)}
+                            </span>
+                        )}
+                    </div>
+                )}
+
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                     <div className="surface-subtle p-4">
                         <p className="text-xs font-black uppercase tracking-wide text-fuchsia-300">

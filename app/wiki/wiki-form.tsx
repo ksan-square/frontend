@@ -1,10 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
 import RichMarkdown from "@/app/_components/rich-markdown";
-import { getCurrentUserId } from "@/lib/current-user";
+import { createWikiPage, updateWikiPage } from "@/lib/admin-api";
 
 type WikiPage = {
     id: string;
@@ -28,10 +27,6 @@ function createSlug(title: string) {
 
 export default function WikiForm({ initialData }: Props) {
     const router = useRouter();
-    const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    );
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [title, setTitle] = useState(initialData?.title ?? "");
     const [slug, setSlug] = useState(initialData?.slug ?? "");
@@ -77,20 +72,12 @@ export default function WikiForm({ initialData }: Props) {
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
 
-        const userId = await getCurrentUserId();
-
-        if (!userId) {
-            setMessage("ログインが必要です。");
-            return;
-        }
-
+        const resolvedSlug = slug || createSlug(title);
         const payload = {
             title,
-            slug: slug || createSlug(title),
+            slug: resolvedSlug,
             body_markdown: body,
             is_published: isPublished,
-            is_delete: false,
-            updated_user: userId,
         };
 
         if (!payload.title || !payload.slug || !payload.body_markdown) {
@@ -98,25 +85,19 @@ export default function WikiForm({ initialData }: Props) {
             return;
         }
 
-        const result = initialData
-            ? await supabase
-                  .from("wiki_pages")
-                  .update(payload)
-                  .eq("id", initialData.id)
-                  .eq("is_delete", false)
-            : await supabase.from("wiki_pages").insert({
-                  ...payload,
-                  created_user: userId,
-              });
-
-        if (result.error) {
-            setMessage(`保存失敗: ${result.error.message}`);
+        try {
+            if (initialData) {
+                await updateWikiPage(initialData.id, payload);
+            } else {
+                await createWikiPage(payload);
+            }
+        } catch (err) {
+            setMessage(`保存失敗: ${err instanceof Error ? err.message : "unknown error"}`);
             return;
         }
 
-        const savedSlug = payload.slug;
         setMessage("保存しました。");
-        router.push(`/wiki/${savedSlug}`);
+        router.push(`/wiki/${resolvedSlug}`);
         router.refresh();
     }
 

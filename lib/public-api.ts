@@ -36,6 +36,21 @@ async function fetchJson<T>(path: string, query?: Record<string, QueryValue>): P
     return response.json() as Promise<T>;
 }
 
+async function postJson<T>(path: string, body: unknown): Promise<T> {
+    const response = await fetch(buildUrl(path), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || `Request failed: ${response.status}`);
+    }
+
+    return response.json() as Promise<T>;
+}
+
 export type PublicSong = {
     id: string;
     title: string;
@@ -128,6 +143,9 @@ export type PublicLive = {
     same_day_order: number | null;
     start_time: string | null;
     end_time: string | null;
+    open_time: string | null;
+    show_start_time: string | null;
+    is_current: boolean;
     ticket_url: string | null;
     official_x_url: string | null;
     event_name: string;
@@ -291,4 +309,8 @@ export function getPublicWikiPageDetail(slug: string) {
 
 export function getPublicSitemap() {
     return fetchJson<PublicSitemapResponse>("/api/v1/public/meta/sitemap");
+}
+
+export function createWikiComment(slug: string, payload: { nickname: string; body: string }) {
+    return postJson<{ id: string }>(`/api/v1/public/wiki-pages/${slug}/comments`, payload);
 }
