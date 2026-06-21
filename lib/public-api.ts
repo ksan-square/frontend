@@ -1,3 +1,12 @@
+// @boundary ISOMORPHIC (browser-safe)
+// 公開API呼び出しラッパー。認証不要。Server Component / Client Component 両方から安全に使える。
+//
+// Boundary:   ISOMORPHIC — fetch のみ。cookies() / window には依存しない。
+// Auth:       なし。
+// Contains:   getApiBaseUrl() — 他の lib ファイルが参照する。
+//             postJson() — 認証不要の POST (wiki comment 等)。
+// Safe in:    page.tsx, layout.tsx, "use client" コンポーネント, Server Actions。
+
 type QueryValue = string | number | null | undefined;
 
 export function getApiBaseUrl() {

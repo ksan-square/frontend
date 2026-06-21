@@ -1,3 +1,7 @@
+// @boundary ISOMORPHIC (browser-safe)
+// ライブデータの表示ロジック (会場名取得・スケジュール要約など)。
+// Server Component / Client Component 両方から安全に使える。
+
 type VenueLike = {
     id?: string;
     name: string;

@@ -1,5 +1,14 @@
+// @boundary SERVER ONLY
 // Server Component 用: SSR 時に Supabase セッションから Bearer token を取得して FastAPI を呼ぶ。
 // Client Component からは admin-api.ts を使うこと。
+//
+// Boundary:   SERVER ONLY — createSupabaseServerClient() が Next.js cookies() に依存。
+//             Client Component から import すると実行時エラーになる。
+// Auth:       SSR 時に session.access_token を Bearer に付与。
+// Safe in:    page.tsx, layout.tsx, Server Actions。
+// Forbidden:  "use client" コンポーネントから import しない。
+// Type import: 型のみの import (import type { ... }) は技術的に動くが、
+//              境界混乱を避けるため admin-api.ts に型を再定義することを推奨。
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getApiBaseUrl } from "@/lib/public-api";
 

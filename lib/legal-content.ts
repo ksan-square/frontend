@@ -1,3 +1,7 @@
+// @boundary ISOMORPHIC (browser-safe)
+// 利用規約・プライバシーポリシーの静的コンテンツ定義。外部依存なし。
+// Server Component / Client Component 両方から安全に使える。
+
 export type LegalSection = {
     heading: string;
     paragraphs?: string[];

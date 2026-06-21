@@ -1,3 +1,12 @@
+// @boundary ROUTE HANDLER ONLY
+// Route Handler 専用 Supabase クライアント生成。
+//
+// Boundary:   ROUTE HANDLER のみ — app/auth/callback/route.ts 専用。
+//             Server Component, Client Component, Server Action では使わない。
+// Auth:       OAuth code → session 交換のためだけに使う。
+// Used by:    app/auth/callback/route.ts のみ。
+// Forbidden:  上記以外の場所で使わない。
+
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";

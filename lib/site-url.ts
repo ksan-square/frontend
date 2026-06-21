@@ -1,3 +1,8 @@
+// @boundary ISOMORPHIC (browser-safe)
+// クライアントサイドのサイト URL 取得ユーティリティ。
+// SSR 時は NEXT_PUBLIC_SITE_URL を使用。ブラウザ時は window.location.origin にフォールバック。
+// Server Component / Client Component 両方から安全に使える。
+
 function trimTrailingSlash(value: string) {
     return value.endsWith("/") ? value.slice(0, -1) : value;
 }

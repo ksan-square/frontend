@@ -1,5 +1,11 @@
+// @boundary CLIENT ONLY
 // Client Component 用: ブラウザで Supabase セッションから Bearer token を自動取得して FastAPI を呼ぶ。
 // Server Component / Server Action からは admin-server-api.ts を使うこと。
+//
+// Boundary:   CLIENT ONLY — createBrowserClient() (anon key + session) を使用。
+// Auth:       adminFetch() が Bearer token を自動付与。ログイン必須。
+// Safe in:    "use client" コンポーネント、イベントハンドラ、form submit。
+// Forbidden:  page.tsx / layout.tsx (Server Component) から import しない。
 import { createBrowserClient } from "@supabase/ssr";
 import { getApiBaseUrl } from "@/lib/public-api";
 

@@ -1,3 +1,7 @@
+// @boundary ISOMORPHIC (browser-safe)
+// URL パラメータ解析・ページネーション計算ユーティリティ。
+// Server Component / Client Component 両方から安全に使える。
+
 export type QueryParam = string | string[] | undefined;
 
 export function firstParam(value: QueryParam) {

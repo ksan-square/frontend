@@ -1,6 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+// @boundary-exception: type-only import from SERVER ONLY file.
+// admin-server-api.ts は Server Component 専用だが、型定義は build 時に消えるため安全。
+// 実装 import (関数・変数) は絶対に追加しないこと — 実行時エラーになる。
 import type { AdminLiveSummary } from "@/lib/admin-server-api";
 import { updateLive } from "./actions";
 import VenueCombobox from "./venue-combobox";

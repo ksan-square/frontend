@@ -1,3 +1,7 @@
+// @boundary ISOMORPHIC (browser-safe)
+// SEO メタデータ生成・description 生成ユーティリティ。定数定義を含む。
+// Server Component / Client Component 両方から安全に使える。
+
 export const SITE_NAME = "こしあんスクエア";
 export const SITE_LOGO_PATH = "/koshian_square_logo_embedded.svg";
 export const SITE_APPLE_ICON_PATH = "/koshian_square_logo.png";
