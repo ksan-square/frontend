@@ -1,3 +1,7 @@
+// @boundary ISOMORPHIC (browser-safe)
+// 日時フォーマット・ラベル生成ユーティリティ。
+// Server Component / Client Component 両方から安全に使える。
+
 export function formatTime(time: string | null) {
     return time ? time.slice(0, 5) : null;
 }

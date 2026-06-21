@@ -43,6 +43,12 @@ export default async function PortalAdminPage() {
             description: "公開内容と掲載タイミングを調整します。",
             symbol: "NEWS",
         },
+        {
+            href: "/editor/mix-yell",
+            title: "ミクチャエール管理",
+            description: "日付ごとの票数と投稿画像を確認します。",
+            symbol: "YELL",
+        },
     ];
 
     return (

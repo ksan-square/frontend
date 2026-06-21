@@ -1,3 +1,13 @@
+// @boundary SERVER ONLY
+// Portal API 呼び出しラッパー。GET /api/v1/portal/me のみ。
+//
+// Boundary:   SERVER ONLY — createSupabaseServerClient() が Next.js cookies() に依存。
+//             Client Component から import すると実行時エラーになる。
+// Auth:       JWT 必須。全 role 通過 (get_current_portal_actor)。
+// Safe in:    page.tsx, layout.tsx, Server Actions。
+// Forbidden:  "use client" コンポーネントから import しない。
+// Used by:    app/editor/layout.tsx, app/portal/admin/page.tsx。
+
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getApiBaseUrl } from "@/lib/public-api";
 

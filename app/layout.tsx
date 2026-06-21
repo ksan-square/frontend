@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import GoogleAnalytics from "@/app/_components/google-analytics";
+import { SiteHeader } from "@/app/_components/site-header";
 import JsonLd from "@/app/_components/json-ld";
 import ToastViewport from "@/app/_components/toast-viewport";
 import {
@@ -110,66 +110,7 @@ export default function RootLayout({
       <body className="site-shell min-h-screen overflow-x-hidden text-zinc-100 antialiased">
         <JsonLd data={websiteJsonLd} />
         <JsonLd data={organizationJsonLd} />
-        <header className="sticky top-0 z-50 border-b border-white/10 bg-black/92 backdrop-blur-md">
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
-            <Link href="/" className="group flex items-center gap-3">
-              <Image
-                src={SITE_LOGO_PATH}
-                alt=""
-                width={40}
-                height={40}
-                className="size-10 rounded-md bg-white object-contain"
-                priority
-              />
-              <span className="text-base font-black text-white md:text-lg">
-                こしあんスクエア
-              </span>
-            </Link>
-
-            <nav className="hidden items-center gap-1 bg-zinc-900 p-1 text-sm text-zinc-300 md:flex">
-              <Link href="/songs" className="rounded-sm px-3 py-1.5 hover:bg-white hover:text-black">
-                曲
-              </Link>
-              <Link href="/lives" className="rounded-sm px-3 py-1.5 hover:bg-white hover:text-black">
-                ライブ
-              </Link>
-              <Link href="/wiki" className="rounded-sm px-3 py-1.5 hover:bg-white hover:text-black">
-                Wiki
-              </Link>
-              <Link href="/portal" className="rounded-sm px-3 py-1.5 hover:bg-white hover:text-black">
-                ポータル
-              </Link>
-            </nav>
-
-            <details className="group relative md:hidden">
-              <summary
-                aria-label="メニューを開く"
-                className="grid size-10 cursor-pointer list-none place-items-center bg-zinc-900 ring-1 ring-white/10 marker:hidden"
-              >
-                <span className="flex flex-col gap-1.5">
-                  <span className="block h-0.5 w-5 bg-white" />
-                  <span className="block h-0.5 w-5 bg-white" />
-                  <span className="block h-0.5 w-5 bg-white" />
-                </span>
-              </summary>
-
-              <nav className="absolute right-0 top-12 z-50 grid min-w-44 gap-1 bg-black p-2 text-sm text-zinc-200 shadow-2xl shadow-black/50 ring-1 ring-white/10">
-                <Link href="/songs" className="px-4 py-3 hover:bg-white hover:text-black">
-                  曲
-                </Link>
-                <Link href="/lives" className="px-4 py-3 hover:bg-white hover:text-black">
-                  ライブ
-                </Link>
-                <Link href="/wiki" className="px-4 py-3 hover:bg-white hover:text-black">
-                  Wiki
-                </Link>
-                <Link href="/portal" className="px-4 py-3 hover:bg-white hover:text-black">
-                  ポータル
-                </Link>
-              </nav>
-            </details>
-          </div>
-        </header>
+        <SiteHeader />
 
         <div className="mx-auto max-w-6xl px-4 py-10 md:py-14">{children}</div>
 
