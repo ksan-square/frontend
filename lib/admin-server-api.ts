@@ -253,6 +253,25 @@ export type AdminNoticeDetailResponse = {
     notice: AdminNotice | null;
 };
 
+export type AdminMixYellItem = {
+    id: string;
+    submission_date: string;
+    name: string | null;
+    image_file_name: string | null;
+    image_content_type: string | null;
+    image_base64: string | null;
+    created_at: string;
+};
+
+export type AdminMixYellListResponse = {
+    items: AdminMixYellItem[];
+    daily_counts: {
+        date: string;
+        count: number;
+    }[];
+    total_count: number;
+};
+
 export function getAdminSongs(params: { initial?: string | null; page?: number }) {
     return adminServerFetch<AdminSongListResponse>("/api/v1/admin/songs", params);
 }
@@ -291,4 +310,8 @@ export function getAdminNotices() {
 
 export function getAdminNoticeDetail(noticeId: string) {
     return adminServerFetch<AdminNoticeDetailResponse>(`/api/v1/admin/notices/${noticeId}`);
+}
+
+export function getAdminMixYells() {
+    return adminServerFetch<AdminMixYellListResponse>("/api/v1/admin/mix-yells");
 }
