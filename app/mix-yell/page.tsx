@@ -47,18 +47,18 @@ export default function MixYellPage() {
         </p>
       </section>
 
-      <section className="grid gap-3 md:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+      <section className="grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
+        <div className="surface-subtle p-5">
           <h2 className="text-lg font-black text-white">投票の流れ</h2>
           <ol className="mt-4 grid gap-3">
             {[
               "ミクチャエールのページを開く",
               "LINEでログインして投票する",
               "投票完了画面をスクショする",
-              "このページにスクショ画像を投稿する",
+              "このページに名前または画像を投稿する",
             ].map((step, index) => (
-              <li key={step} className="flex gap-3 rounded-xl bg-zinc-950 p-3">
-                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-white text-sm font-black text-black">
+              <li key={step} className="flex gap-3 bg-black p-3 ring-1 ring-white/10">
+                <span className="grid size-7 shrink-0 place-items-center rounded-sm bg-white text-sm font-black text-black">
                   {index + 1}
                 </span>
                 <span className="pt-1 text-sm font-semibold text-zinc-100">
@@ -69,17 +69,17 @@ export default function MixYellPage() {
           </ol>
         </div>
 
-        <aside className="rounded-2xl border border-fuchsia-400/40 bg-fuchsia-500 p-5 text-black">
-          <p className="text-xs font-black uppercase">Vote Link</p>
-          <h2 className="mt-2 text-2xl font-black">ミクチャエールへ</h2>
-          <p className="mt-3 text-sm font-semibold leading-6">
+        <aside className="surface p-5 ring-1 ring-white/10">
+          <p className="text-xs font-black uppercase text-fuchsia-300">Vote Link</p>
+          <h2 className="mt-2 text-2xl font-black text-white">ミクチャエールへ</h2>
+          <p className="mt-3 text-sm leading-6 text-zinc-400">
             投票ページを開いて、LINEログイン後にエール投票を進めてください。
           </p>
           <a
             href={MIX_YELL_VOTE_URL}
             target="_blank"
             rel="noreferrer"
-            className="mt-5 inline-flex w-full justify-center rounded-full bg-black px-5 py-3 text-sm font-black text-white hover:bg-zinc-800"
+            className="mt-5 inline-flex w-fit rounded-md bg-white px-5 py-3 text-sm font-black text-black hover:bg-zinc-200"
           >
             投票ページを開く
           </a>
