@@ -3,7 +3,7 @@ import Link from "next/link";
 import JsonLd from "@/app/_components/json-ld";
 import { formatDateJa, formatTime } from "@/lib/date-time";
 import { getPrimaryVenue, getScheduleSummaryLines } from "@/lib/live-utils";
-import { getPublicHome } from "@/lib/public-api";
+import { getPublicHome, type PublicHomeResponse } from "@/lib/public-api";
 import { getSiteUrl } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -28,8 +28,26 @@ function createShareUrl() {
   return `https://twitter.com/intent/tweet?${params.toString()}`;
 }
 
+function createFallbackHome(): PublicHomeResponse {
+  return {
+    counts: {
+      songs: 0,
+      lives: 0,
+      wiki_pages: 0,
+    },
+    notices: [],
+    latest_songs: [],
+    latest_lives: [],
+    latest_wiki_pages: [],
+    next_live: null,
+  };
+}
+
 export default async function Home() {
-  const payload = await getPublicHome();
+  const payload = await getPublicHome().catch((error) => {
+    console.error("Failed to fetch public home", error);
+    return createFallbackHome();
+  });
   const siteUrl = getSiteUrl();
   const songCount = payload.counts.songs;
   const liveCount = payload.counts.lives;

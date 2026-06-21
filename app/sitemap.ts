@@ -34,7 +34,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         },
     ];
 
-    const { songs, lives, wiki_pages: wikiPages } = await getPublicSitemap();
+    const { songs, lives, wiki_pages: wikiPages } = await getPublicSitemap().catch((error) => {
+        console.error("Failed to fetch sitemap entries", error);
+        return { songs: [], lives: [], wiki_pages: [] };
+    });
 
     const songPages: MetadataRoute.Sitemap = (songs ?? []).map((song) => ({
         url: `${siteUrl}/songs/${song.url}`,

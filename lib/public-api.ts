@@ -38,7 +38,7 @@ async function fetchJson<T>(path: string, query?: Record<string, QueryValue>): P
     });
 
     if (!response.ok) {
-        const message = await response.text();
+        const message = await readErrorMessage(response);
         throw new Error(message || `Request failed: ${response.status}`);
     }
 
@@ -53,11 +53,22 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
     });
 
     if (!response.ok) {
-        const message = await response.text();
+        const message = await readErrorMessage(response);
         throw new Error(message || `Request failed: ${response.status}`);
     }
 
     return response.json() as Promise<T>;
+}
+
+async function readErrorMessage(response: Response) {
+    const message = await response.text();
+    const contentType = response.headers.get("content-type") ?? "";
+
+    if (contentType.includes("text/html") || message.trimStart().startsWith("<")) {
+        return `Request failed: ${response.status}`;
+    }
+
+    return message;
 }
 
 export type PublicSong = {

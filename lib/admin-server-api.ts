@@ -45,11 +45,22 @@ async function adminServerFetch<T>(path: string, query?: Record<string, QueryVal
     });
 
     if (!response.ok) {
-        const message = await response.text();
+        const message = await readErrorMessage(response);
         throw new Error(message || `Request failed: ${response.status}`);
     }
 
     return response.json() as Promise<T>;
+}
+
+async function readErrorMessage(response: Response) {
+    const message = await response.text();
+    const contentType = response.headers.get("content-type") ?? "";
+
+    if (contentType.includes("text/html") || message.trimStart().startsWith("<")) {
+        return `Request failed: ${response.status}`;
+    }
+
+    return message;
 }
 
 export type AdminSongListResponse = {

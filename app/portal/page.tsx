@@ -7,7 +7,22 @@ import { getPortalMe } from "@/lib/portal-server-api";
 export const dynamic = "force-dynamic";
 
 export default async function PortalPage() {
-    const me = await getPortalMe();
+    let me;
+    try {
+        me = await getPortalMe();
+    } catch (error) {
+        return (
+            <main className="space-y-8">
+                <Breadcrumbs items={[{ label: "ポータル" }]} />
+                <section className="surface-subtle p-6">
+                    <h1 className="text-2xl font-black text-white">ポータル情報を取得できませんでした</h1>
+                    <p className="mt-3 text-sm leading-6 text-zinc-400">
+                        {error instanceof Error ? error.message : "unknown error"}
+                    </p>
+                </section>
+            </main>
+        );
+    }
     const isAdminAreaVisible = me.profile.role === "admin" || me.profile.role === "editor";
     const roleLabelMap = {
         viewer: "一般ユーザー",
