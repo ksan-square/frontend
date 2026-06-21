@@ -133,10 +133,10 @@ export default function MixYellForm() {
       return;
     }
 
-    if (!normalizedName && !imageFile) {
+    if (!imageFile) {
       setSubmissionState({
         status: "error",
-        message: "画像投稿と名前のどちらかを入力してください。",
+        message: "投票完了画面のスクショ画像を投稿してください。",
       });
       return;
     }
@@ -172,7 +172,7 @@ export default function MixYellForm() {
       await createMixYell(payload);
       setSubmissionState({
         status: "success",
-        message: "投稿を受け付けました。",
+        message: "投票スクショを受け付けました。",
         postedDate: date,
         postedName: normalizedName || undefined,
         postedImageName: imageFile?.name,
@@ -193,9 +193,16 @@ export default function MixYellForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <section className="space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+        <div className="border-b border-zinc-800 pb-4">
+          <h2 className="text-lg font-black text-white">スクショ投稿</h2>
+          <p className="mt-2 text-sm leading-6 text-zinc-400">
+            投票が終わった画面のスクリーンショットを選択して送信してください。
+          </p>
+        </div>
+
         <div className="space-y-2">
           <label className="block text-sm font-semibold text-zinc-300" htmlFor="mix-yell-date">
-            日付（必須）
+            投票日（必須）
           </label>
           <input
             id="mix-yell-date"
@@ -205,7 +212,7 @@ export default function MixYellForm() {
             onChange={(event) => setDate(event.target.value)}
             required
           />
-          <p className="text-sm text-zinc-400">デフォルトは当日です。</p>
+          <p className="text-sm text-zinc-400">デフォルトは今日の日付です。</p>
         </div>
 
         <div className="space-y-2">
@@ -218,7 +225,7 @@ export default function MixYellForm() {
             className="w-full rounded-xl bg-zinc-950 p-3"
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="表示名を入力"
+            placeholder="確認用の名前を入力"
             maxLength={80}
           />
         </div>
@@ -228,7 +235,7 @@ export default function MixYellForm() {
             className="block text-sm font-semibold text-zinc-300"
             htmlFor="mix-yell-image"
           >
-            画像投稿（任意）
+            投票スクショ（必須）
           </label>
           <input
             id="mix-yell-image"
@@ -237,8 +244,9 @@ export default function MixYellForm() {
             accept="image/*"
             className="w-full rounded-xl bg-zinc-950 p-3 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-700 file:px-4 file:py-2 file:text-sm file:font-bold file:text-zinc-100"
             onChange={onImageChange}
+            required
           />
-          <p className="text-sm text-zinc-400">※ 画像投稿と名前はどちらか一方でも入力してください。</p>
+          <p className="text-sm text-zinc-400">投票完了画面が分かる画像を選択してください。</p>
         </div>
 
         {imagePreview ? (
@@ -261,10 +269,10 @@ export default function MixYellForm() {
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
-          className="rounded-full bg-fuchsia-500 px-6 py-3 font-black hover:bg-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-full bg-fuchsia-500 px-6 py-3 font-black text-black hover:bg-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={submissionState.status === "submitting"}
         >
-          投稿する
+          スクショを投稿する
         </button>
       </div>
 
@@ -286,9 +294,9 @@ export default function MixYellForm() {
         <section className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
           <h2 className="text-sm font-black text-zinc-100">送信内容（確認）</h2>
           <ul className="mt-3 space-y-1 text-sm text-zinc-300">
-            <li>日付: {submissionState.postedDate}</li>
+            <li>投票日: {submissionState.postedDate}</li>
             <li>名前: {submissionState.postedName || "（未入力）"}</li>
-            <li>画像: {submissionState.postedImageName || "（未入力）"}</li>
+            <li>スクショ: {submissionState.postedImageName || "（未入力）"}</li>
           </ul>
         </section>
       ) : null}

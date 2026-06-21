@@ -8,20 +8,22 @@ import {
   joinDescriptionParts,
 } from "@/lib/seo";
 
+const MIX_YELL_VOTE_URL = "https://yell.mixch.tv/contests/339/candidates/14917";
+
 export const metadata: Metadata = {
-  title: "Mix Yell",
+  title: "ミクチャエール投票所",
   description: joinDescriptionParts([
-    `${SITE_NAME}のMix Yell投稿ページです。`,
-    "日付、画像（任意）、名前（任意）を登録できます。",
+    `${SITE_NAME}のミクチャエール投票所です。`,
+    "LINEでログインして投票し、スクリーンショットを投稿できます。",
   ]),
   alternates: {
     canonical: buildCanonicalPath("/mix-yell"),
   },
   openGraph: {
-    title: `Mix Yell | ${SITE_NAME}`,
+    title: `ミクチャエール投票所 | ${SITE_NAME}`,
     description: joinDescriptionParts([
-      `${SITE_NAME}のMix Yell投稿ページです。`,
-      "日付、画像（任意）、名前（任意）を登録できます。",
+      `${SITE_NAME}のミクチャエール投票所です。`,
+      "LINEでログインして投票し、スクリーンショットを投稿できます。",
     ]),
     url: new URL("/mix-yell", createMetadataBase()).toString(),
   },
@@ -36,10 +38,52 @@ export default function MixYellPage() {
         <p className="inline-flex bg-white px-3 py-1 text-xs font-black uppercase text-black">
           Mix Yell
         </p>
-        <h1 className="text-4xl font-black text-white md:text-5xl">Mix Yell</h1>
+        <h1 className="text-4xl font-black text-white md:text-5xl">
+          ミクチャエール投票所
+        </h1>
         <p className="max-w-2xl text-sm leading-7 text-zinc-300 md:text-base">
-          日付を選択し、画像投稿と名前のどちらかを入力して送信できます。
+          ミクチャエールで投票したら、完了画面をスクリーンショットしてここに投稿してください。
+          投稿された画像をもとに投票状況を確認します。
         </p>
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-[1.1fr_0.9fr]">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+          <h2 className="text-lg font-black text-white">投票の流れ</h2>
+          <ol className="mt-4 grid gap-3">
+            {[
+              "ミクチャエールのページを開く",
+              "LINEでログインして投票する",
+              "投票完了画面をスクショする",
+              "このページにスクショ画像を投稿する",
+            ].map((step, index) => (
+              <li key={step} className="flex gap-3 rounded-xl bg-zinc-950 p-3">
+                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-white text-sm font-black text-black">
+                  {index + 1}
+                </span>
+                <span className="pt-1 text-sm font-semibold text-zinc-100">
+                  {step}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <aside className="rounded-2xl border border-fuchsia-400/40 bg-fuchsia-500 p-5 text-black">
+          <p className="text-xs font-black uppercase">Vote Link</p>
+          <h2 className="mt-2 text-2xl font-black">ミクチャエールへ</h2>
+          <p className="mt-3 text-sm font-semibold leading-6">
+            投票ページを開いて、LINEログイン後にエール投票を進めてください。
+          </p>
+          <a
+            href={MIX_YELL_VOTE_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-5 inline-flex w-full justify-center rounded-full bg-black px-5 py-3 text-sm font-black text-white hover:bg-zinc-800"
+          >
+            投票ページを開く
+          </a>
+        </aside>
       </section>
 
       <MixYellForm />
