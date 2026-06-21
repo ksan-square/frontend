@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: "/songs", label: "曲" },
   { href: "/lives", label: "ライブ" },
   { href: "/wiki", label: "Wiki" },
+  { href: "/mix-yell", label: "Mix Yell" },
   { href: "/portal", label: "ポータル" },
 ] as const;
 

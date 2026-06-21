@@ -255,6 +255,14 @@ export type PublicWikiPageDetailResponse = {
     };
 };
 
+export type PublicMixYellCreateRequest = {
+    date: string;
+    name?: string | null;
+    image_file_name?: string | null;
+    image_content_type?: string | null;
+    image_base64?: string | null;
+};
+
 export type PublicNoticeListResponse = {
     items: {
         id: string;
@@ -322,4 +330,8 @@ export function getPublicSitemap() {
 
 export function createWikiComment(slug: string, payload: { nickname: string; body: string }) {
     return postJson<{ id: string }>(`/api/v1/public/wiki-pages/${slug}/comments`, payload);
+}
+
+export function createMixYell(payload: PublicMixYellCreateRequest) {
+    return postJson<{ id: string }>("/api/v1/public/mix-yells", payload);
 }

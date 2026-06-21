@@ -7,6 +7,7 @@ import ToastViewport from "@/app/_components/toast-viewport";
 import {
   DEFAULT_DESCRIPTION,
   SITE_APPLE_ICON_PATH,
+  SITE_LOGO_PATH,
   SITE_NAME,
   SITE_OG_IMAGE_PATH,
   buildAbsoluteUrl,
